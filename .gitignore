@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Electron build cache
+.webpack/
+out/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+absenku-log.json
+
+# Runtime config (user-specific, stored in userData)
+absenkurc.json
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cloudflared binary (downloaded at build time via CI, or placed manually)
+cloudflared
+cloudflared.exe

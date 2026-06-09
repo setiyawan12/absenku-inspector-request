@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absenku Inspector</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg      : #0a0b14;
+  --surface : #12131f;
+  --surface2: #1a1b2e;
+  --border  : #2a2b3d;
+  --text    : #d8daf0;
+  --muted   : #6b7099;
+  --accent  : #818cf8;
+  --green   : #34d399;
+  --yellow  : #fbbf24;
+  --red     : #f43f5e;
+}
+html.light {
+  --bg      : #f4f5ff;
+  --surface : #ffffff;
+  --surface2: #edf0ff;
+  --border  : #dde1f5;
+  --text    : #1a1b2e;
+  --muted   : #5c6080;
+  --accent  : #4f51d4;
+  --green   : #047857;
+  --yellow  : #b45309;
+  --red     : #be123c;
+}
+
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background : var(--bg);
+  color      : var(--text);
+  display    : flex;
+  flex-direction: column;
+}
+
+/* ═══ DASHBOARD VIEW ═══════════════════════════════════ */
+#view-dashboard {
+  display       : flex;
+  flex-direction: column;
+  height        : 100%;
+  -webkit-app-region: drag;
+}
+#view-dashboard.hidden { display: none; }
+
+/* Header */
+.dash-header {
+  display    : flex;
+  align-items: center;
+  gap        : 8px;
+  padding    : 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.dash-header h1 { font-size: 14px; font-weight: 700; color: var(--accent); }
+.dash-header .subtitle { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+.btn-sm {
+  -webkit-app-region: no-drag;
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  padding: 4px 9px; border-radius: 6px; font-size: 11px; cursor: pointer;
+  transition: color .15s, border-color .15s; display: flex; align-items: center; gap: 4px;
+}
+.btn-sm:hover { color: var(--text); border-color: var(--accent); }
+
+.btn-delete-all {
+  -webkit-app-region: no-drag;
+  background: none; border: 1px solid rgba(244,63,94,.3); color: var(--red);
+  padding: 4px 9px; border-radius: 6px; font-size: 11px; cursor: pointer;
+  transition: background .15s;
+}
+.btn-delete-all:hover { background: rgba(244,63,94,.1); }
+
+/* Add bar */
+.add-bar {
+  display: flex; gap: 10px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+.add-bar input {
+  flex: 1; padding: 8px 12px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-size: 14px; outline: none; transition: border-color .15s;
+}
+.add-bar input:focus       { border-color: var(--accent); }
+.add-bar input::placeholder{ color: var(--muted); }
+.btn-start {
+  padding: 8px 18px; background: var(--accent); border: none; border-radius: 8px;
+  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: opacity .15s; white-space: nowrap; -webkit-app-region: no-drag;
+}
+.btn-start:hover   { opacity: .85; }
+.btn-start:disabled{ opacity: .4; cursor: not-allowed; }
+
+#err-msg {
+  padding: 0 16px 6px; font-size: 11px; color: var(--red);
+  flex-shrink: 0; min-height: 14px; -webkit-app-region: no-drag;
+}
+
+/* Tunnel list */
+.tunnel-list { flex: 1; overflow: auto; padding: 10px 16px 14px; -webkit-app-region: no-drag; }
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; color: var(--muted); font-size: 13px; gap: 8px;
+}
+.empty .icon { font-size: 36px; }
+
+/* Card */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; transition: border-color .2s;
+}
+.card.live         { border-color: rgba(52,211,153,.35); }
+.card.reconnecting { border-color: rgba(244,63,94,.3); }
+.card.stopped      { opacity: .5; }
+
+/* Card top row */
+.card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.port-badge { font-size: 14px; font-weight: 700; color: var(--accent); font-family: monospace; flex-shrink: 0; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-starting     { background: var(--yellow); animation: pulse 1s infinite; }
+.dot-live         { background: var(--green); }
+.dot-reconnecting { background: var(--red);   animation: pulse 1s infinite; }
+.dot-stopped      { background: var(--muted); }
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.2; } }
+
+.status-label { font-size: 11px; flex-shrink: 0; }
+.status-label.live         { color: var(--green); }
+.status-label.starting     { color: var(--yellow); }
+.status-label.reconnecting { color: var(--red); }
+.status-label.stopped      { color: var(--muted); }
+
+.card-meta { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.meta-chip {
+  font-size: 10px; color: var(--muted); font-family: monospace;
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
+.meta-chip.green { color: var(--green); border-color: rgba(52,211,153,.25); background: rgba(52,211,153,.08); }
+.meta-chip.warn  { color: var(--yellow); border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.08); }
+
+/* URL History */
+.url-history { margin-top: 6px; margin-bottom: 4px; }
+.url-history-toggle {
+  background: none; border: none; color: var(--muted); font-size: 10px; cursor: pointer;
+  padding: 2px 0; display: flex; align-items: center; gap: 4px; transition: color .15s;
+}
+.url-history-toggle:hover { color: var(--text); }
+.url-history-list { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+.url-history-item {
+  display: flex; align-items: center; gap: 5px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px;
+}
+.url-history-item span {
+  flex: 1; font-size: 10px; font-family: monospace; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.url-history-item button {
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px;
+  padding: 0 2px; flex-shrink: 0; transition: color .15s;
+}
+.url-history-item button:hover { color: var(--text); }
+
+/* Autostart toggle */
+.btn-autostart {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 20px; border-radius: 4px; cursor: pointer; font-size: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  transition: all .15s; flex-shrink: 0; padding: 0;
+}
+.btn-autostart.on  { border-color: rgba(129,140,248,.5); color: var(--accent); background: rgba(129,140,248,.1); }
+.btn-autostart:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Label */
+.card-label {
+  font-size: 11px; color: var(--muted); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.label-text {
+  cursor: pointer; color: var(--muted); border-bottom: 1px dashed transparent;
+  transition: border-color .15s, color .15s; padding-bottom: 1px;
+}
+.label-text:hover { color: var(--text); border-color: var(--muted); }
+.label-input {
+  background: var(--surface2); border: 1px solid var(--accent); border-radius: 4px;
+  color: var(--text); font-size: 11px; padding: 2px 6px; outline: none; width: 140px;
+}
+
+/* URL row */
+.url-row {
+  display: flex; align-items: center; gap: 6px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; margin-bottom: 8px;
+}
+.url-text {
+  flex: 1; font-size: 12px; font-family: monospace; color: var(--green);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.url-text:hover { text-decoration: underline; }
+.url-placeholder { flex: 1; font-size: 12px; color: var(--muted); font-style: italic; }
+.btn-icon {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: color .15s, border-color .15s;
+}
+.btn-icon:hover { color: var(--text); border-color: var(--accent); }
+
+/* Actions */
+.card-actions { display: flex; gap: 6px; }
+.btn-action {
+  flex: 1; padding: 6px 0; border-radius: 7px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: none; transition: opacity .15s;
+}
+.btn-action:hover  { opacity: .85; }
+.btn-action:active { opacity: .7; }
+.btn-inspector { background: rgba(129,140,248,.15); color: var(--accent); border: 1px solid rgba(129,140,248,.3); }
+.btn-stop      { background: rgba(244,63,94,.12);  color: var(--red);    border: 1px solid rgba(244,63,94,.25); }
+.btn-restart   { background: rgba(251,191,36,.12); color: var(--yellow); border: 1px solid rgba(251,191,36,.25); }
+.btn-delete    { background: rgba(244,63,94,.08);  color: var(--red);    border: 1px solid rgba(244,63,94,.2); flex: 0; padding: 6px 12px; }
+
+/* Bottom bar */
+.insp-bar {
+  display: flex; align-items: center; gap: 8px; padding: 7px 16px;
+  border-top: 1px solid var(--border); font-size: 11px; color: var(--muted);
+  flex-shrink: 0; -webkit-app-region: no-drag;
+}
+.insp-bar-url { color: var(--accent); cursor: pointer; text-decoration: none; }
+.insp-bar-url:hover { text-decoration: underline; }
+
+/* ═══ INSPECTOR VIEW ════════════════════════════════════ */
+#view-inspector { display: none; flex-direction: column; height: 100%; }
+#view-inspector.visible { display: flex; }
+
+.insp-topbar {
+  display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface);
+  -webkit-app-region: drag;
+}
+.btn-back {
+  -webkit-app-region: no-drag;
+  display: flex; align-items: center; gap: 5px; background: none;
+  border: 1px solid var(--border); color: var(--text); padding: 4px 10px;
+  border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-back:hover { border-color: var(--accent); color: var(--accent); }
+.insp-topbar-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.insp-topbar-url   { font-size: 11px; color: var(--muted); font-family: monospace; }
+.btn-reload {
+  -webkit-app-region: no-drag; margin-left: auto; background: none;
+  border: 1px solid var(--border); color: var(--muted); width: 28px; height: 28px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, border-color .15s;
+}
+.btn-reload:hover { color: var(--text); border-color: var(--accent); }
+#insp-frame { flex: 1; border: none; width: 100%; background: var(--bg); }
+
+/* ═══ QR MODAL ══════════════════════════════════════════ */
+#qr-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.55); align-items: center; justify-content: center;
+}
+#qr-overlay.open { display: flex; }
+.qr-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px 20px 18px; text-align: center; width: 290px;
+}
+.qr-box h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+#qr-img { width: 220px; height: 220px; border-radius: 8px; display: block; margin: 0 auto 12px; }
+#qr-url-text {
+  font-size: 10px; color: var(--muted); word-break: break-all;
+  font-family: monospace; margin-bottom: 14px; line-height: 1.5;
+}
+.qr-actions { display: flex; gap: 8px; }
+.btn-qr-copy {
+  flex: 1; padding: 7px; background: rgba(129,140,248,.15); color: var(--accent);
+  border: 1px solid rgba(129,140,248,.3); border-radius: 7px; font-size: 12px;
+  cursor: pointer; transition: opacity .15s;
+}
+.btn-qr-copy:hover { opacity: .85; }
+.btn-qr-close {
+  flex: 1; padding: 7px; background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 7px; font-size: 12px; cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-qr-close:hover { opacity: .85; }
+
+/* Toast */
+.copied-toast {
+  position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff; padding: 5px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; opacity: 0; transition: opacity .2s;
+  pointer-events: none; z-index: 999;
+}
+.copied-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ═══ DASHBOARD VIEW ═══════════════════════════════════════════════════════ -->
+<div id="view-dashboard">
+
+  <header class="dash-header">
+    <span style="font-size:16px;-webkit-app-region:no-drag">⚡</span>
+    <h1>Absenku Inspector</h1>
+    <span class="subtitle" id="insp-subtitle">memuat…</span>
+    <button class="btn-delete-all" id="btn-delete-all" onclick="deleteAll()" style="display:none">🗑 Hapus Semua</button>
+    <button class="btn-sm" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">
+      <svg id="lnch-moon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      <svg id="lnch-sun"  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <button class="btn-sm" onclick="openSettings()">⚙</button>
+  </header>
+
+  <div class="add-bar">
+    <input type="number" id="port-input"
+      placeholder="Masukkan port lokal (contoh: 3000)"
+      min="1" max="65535"
+      onkeydown="if(event.key==='Enter') addTunnel()"
+    />
+    <button class="btn-start" id="btn-add" onclick="addTunnel()">▶ Start Tunnel</button>
+  </div>
+
+  <div id="err-msg"></div>
+  <div class="tunnel-list" id="tunnel-list">
+    <div class="empty"><span class="icon">🌐</span><span>Belum ada tunnel aktif.</span>
+      <span style="font-size:11px">Masukkan port lokal dan klik <b>Start Tunnel</b>.</span></div>
+  </div>
+
+  <div class="insp-bar">
+    <span>Inspector:</span>
+    <a class="insp-bar-url" id="insp-link" href="#" onclick="showInspector(); return false;">–</a>
+    <button class="btn-icon" title="Salin URL inspector" onclick="copyInsp()" style="width:22px;height:22px;font-size:11px">⎘</button>
+    <span style="flex:1"></span>
+    <span id="insp-requests">0 request</span>
+  </div>
+</div>
+
+<!-- ═══ INSPECTOR VIEW ════════════════════════════════════════════════════════ -->
+<div id="view-inspector">
+  <div class="insp-topbar">
+    <button class="btn-back" onclick="showDashboard()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 12 6 8 10 4"/></svg>
+      Kembali
+    </button>
+    <span class="insp-topbar-title">Request Inspector</span>
+    <span class="insp-topbar-url" id="topbar-url"></span>
+    <span id="insp-filter-label" style="font-size:10px;color:var(--accent);background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.3);border-radius:4px;padding:2px 7px;font-family:monospace;cursor:pointer" onclick="clearPortFilter()" title="Klik untuk hapus filter port"></span>
+    <button class="btn-reload" title="Reload" onclick="reloadInsp()">↺</button>
+  </div>
+  <iframe id="insp-frame" src="about:blank"></iframe>
+</div>
+
+<!-- ═══ QR MODAL ═════════════════════════════════════════════════════════════ -->
+<div id="qr-overlay" onclick="closeQR()">
+  <div class="qr-box" onclick="event.stopPropagation()">
+    <h3>📱 QR Code</h3>
+    <img id="qr-img" src="" alt="QR Code">
+    <div id="qr-url-text"></div>
+    <div class="qr-actions">
+      <button class="btn-qr-copy" onclick="copyQR()">⎘ Salin URL</button>
+      <button class="btn-qr-close" onclick="closeQR()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="copied-toast" id="toast">Disalin!</div>
+
+<script>
+let _tunnels       = [];
+let _inspPort      = 0;
+let _inspLoaded    = false;
+let _inspTargetPort = null;  // port filter to apply when inspector opens
+let _reqCounts     = {};     // { [localPort]: count }
+let _qrCurrentUrl  = '';
+let _toastTimer;
+let _uptimeTimer;
+let _histExpanded  = {};     // { [localPort]: bool } — expanded state for URL history
+
+// ═══ Theme ════════════════════════════════════════════════════════════════════
+function _applyLauncherTheme(isLight) {
+  document.documentElement.classList.toggle('light', isLight);
+  document.getElementById('lnch-moon').style.display = isLight ? 'none' : '';
+  document.getElementById('lnch-sun' ).style.display = isLight ? ''     : 'none';
+}
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  const theme   = isLight ? 'light' : 'dark';
+  localStorage.setItem('absenku-theme', theme);
+  _applyLauncherTheme(isLight);
+  const frame = document.getElementById('insp-frame');
+  try { frame.contentWindow.postMessage({ type: 'absenku-theme', theme }, '*'); } catch {}
+}
+window.addEventListener('message', e => {
+  if (!e.data || e.data.type !== 'absenku-theme') return;
+  const isLight = e.data.theme === 'light';
+  localStorage.setItem('absenku-theme', e.data.theme);
+  _applyLauncherTheme(isLight);
+});
+(function() {
+  const saved = localStorage.getItem('absenku-theme');
+  const preferLight = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  _applyLauncherTheme(preferLight);
+})();
+
+// ═══ Init ═════════════════════════════════════════════════════════════════════
+async function init() {
+  _inspPort = await window.absenku.getInspPort();
+  document.getElementById('insp-link').textContent  = `http://localhost:${_inspPort}`;
+  document.getElementById('topbar-url').textContent = `http://localhost:${_inspPort}`;
+
+  _tunnels = await window.absenku.listTunnels();
+  render();
+
+  window.absenku.onTunnelUpdate(tunnels => { _tunnels = tunnels; render(); });
+
+  setInterval(pollRequests, 3000);
+  pollRequests();
+
+  // Uptime updater (every second, DOM only — no re-render)
+  _uptimeTimer = setInterval(updateUptimes, 1000);
+}
+
+// ═══ Poll ═════════════════════════════════════════════════════════════════════
+async function pollRequests() {
+  try {
+    const r = await fetch(`http://localhost:${_inspPort}/log`);
+    if (!r.ok) return;
+    const log = await r.json();
+    document.getElementById('insp-requests').textContent = `${log.length} request`;
+    const counts = {};
+    for (const e of log) counts[e.localPort] = (counts[e.localPort] || 0) + 1;
+    _reqCounts = counts;
+    // Update count chips in-place (no full re-render)
+    for (const [port, cnt] of Object.entries(counts)) {
+      const el = document.getElementById(`req-count-${port}`);
+      if (el) el.textContent = `${cnt} req`;
+    }
+  } catch {}
+}
+
+function updateUptimes() {
+  for (const t of _tunnels) {
+    if (!t.startedAt || t.status === 'stopped') continue;
+    const el = document.getElementById(`uptime-${t.localPort}`);
+    if (el) el.textContent = formatUptime(Math.floor((Date.now() - t.startedAt) / 1000));
+  }
+}
+
+// ═══ View switching ════════════════════════════════════════════════════════════
+function _pushInspectorState(frame) {
+  const theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  try { frame.contentWindow.postMessage({ type: 'absenku-theme', theme }, '*'); } catch {}
+  if (_inspTargetPort !== null) {
+    try { frame.contentWindow.postMessage({ type: 'absenku-port-filter', port: _inspTargetPort }, '*'); } catch {}
+  }
+}
+
+function showInspector(port) {
+  _inspTargetPort = (port !== undefined) ? Number(port) : null;
+  const frame = document.getElementById('insp-frame');
+
+  // Update topbar port indicator
+  const portLabel = _inspTargetPort ? `  · :${_inspTargetPort}` : '';
+  document.getElementById('insp-filter-label').textContent = _inspTargetPort ? `Filter: :${_inspTargetPort}` : '';
+
+  if (!_inspLoaded) {
+    _inspLoaded = true;
+    frame.src   = `http://localhost:${_inspPort}`;
+    frame.onload = () => _pushInspectorState(frame);
+  } else {
+    // Already loaded — push filter immediately
+    _pushInspectorState(frame);
+  }
+  document.getElementById('view-dashboard').classList.add('hidden');
+  document.getElementById('view-inspector').classList.add('visible');
+}
+function showDashboard() {
+  document.getElementById('view-inspector').classList.remove('visible');
+  document.getElementById('view-dashboard').classList.remove('hidden');
+}
+function reloadInsp() {
+  const frame = document.getElementById('insp-frame');
+  _inspLoaded = false;
+  frame.src = `http://localhost:${_inspPort}`;
+  frame.onload = () => { _inspLoaded = true; _pushInspectorState(frame); };
+}
+function clearPortFilter() {
+  _inspTargetPort = null;
+  document.getElementById('insp-filter-label').textContent = '';
+  const frame = document.getElementById('insp-frame');
+  try { frame.contentWindow.postMessage({ type: 'absenku-port-filter', port: null }, '*'); } catch {}
+}
+
+// ═══ Tunnel actions ════════════════════════════════════════════════════════════
+async function addTunnel() {
+  const input = document.getElementById('port-input');
+  const port  = parseInt(input.value, 10);
+  setErr('');
+  if (!port || port < 1 || port > 65535) { setErr('Port tidak valid (1–65535).'); return; }
+  const existing = _tunnels.find(t => t.localPort === port && t.status !== 'stopped');
+  if (existing) { setErr(`Port ${port} sudah berjalan.`); return; }
+
+  const btn = document.getElementById('btn-add');
+  btn.disabled = true; btn.textContent = 'Memulai…';
+  try {
+    const res = await window.absenku.startTunnel(port);
+    if (!res.ok) setErr(res.error || 'Gagal memulai tunnel.');
+    else input.value = '';
+  } catch (e) { setErr('Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '▶ Start Tunnel'; }
+}
+async function stopTunnel(port)   { await window.absenku.stopTunnel(port); }
+async function deleteTunnel(port) { await window.absenku.deleteTunnel(port); }
+async function deleteAll() {
+  if (!confirm('Hapus semua tunnel?')) return;
+  await window.absenku.deleteAllTunnels();
+}
+async function restartTunnel(port) {
+  await window.absenku.stopTunnel(port);
+  await new Promise(r => setTimeout(r, 400));
+  await window.absenku.startTunnel(port);
+}
+async function toggleAutoStart(port) {
+  await window.absenku.toggleAutoStart(port);
+}
+
+// ═══ Label editing ═════════════════════════════════════════════════════════════
+function editLabel(port) {
+  const spanId  = `label-span-${port}`;
+  const inputId = `label-input-${port}`;
+  const span = document.getElementById(spanId);
+  if (!span) return;
+
+  const t = _tunnels.find(t => t.localPort === port);
+  const current = t?.label || '';
+
+  span.style.display = 'none';
+  const inp = document.createElement('input');
+  inp.className   = 'label-input';
+  inp.id          = inputId;
+  inp.value       = current;
+  inp.placeholder = 'Nama tunnel…';
+  inp.maxLength   = 30;
+  span.parentNode.insertBefore(inp, span.nextSibling);
+  inp.focus();
+  inp.select();
+
+  const save = async () => {
+    const label = inp.value.trim();
+    await window.absenku.setLabel(port, label);
+    inp.remove();
+    span.style.display = '';
+  };
+  inp.onblur = save;
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { inp.blur(); }
+    if (e.key === 'Escape') { inp.value = current; inp.blur(); }
+  };
+}
+
+// ═══ QR Code ═══════════════════════════════════════════════════════════════════
+async function openQR(url) {
+  _qrCurrentUrl = url;
+  document.getElementById('qr-url-text').textContent = url;
+  document.getElementById('qr-img').src = '';
+  document.getElementById('qr-overlay').classList.add('open');
+
+  const dataUrl = await window.absenku.generateQR(url);
+  if (dataUrl) document.getElementById('qr-img').src = dataUrl;
+  else document.getElementById('qr-img').alt = 'Gagal generate QR';
+}
+function closeQR() { document.getElementById('qr-overlay').classList.remove('open'); }
+async function copyQR() {
+  await window.absenku.copyText(_qrCurrentUrl);
+  showToast();
+}
+
+// ═══ Copy helpers ══════════════════════════════════════════════════════════════
+async function copyInsp() { await window.absenku.copyText(`http://localhost:${_inspPort}`); showToast(); }
+async function copyUrl(url){ await window.absenku.copyText(url); showToast(); }
+function openUrl(url)      { if (url) window.absenku.openExternal(url); }
+function openSettings()    { window.absenku.openSettings(); }
+
+// ═══ Render ════════════════════════════════════════════════════════════════════
+function render() {
+  const container = document.getElementById('tunnel-list');
+  const live  = _tunnels.filter(t => t.status === 'live').length;
+  const total = _tunnels.filter(t => t.status !== 'stopped').length;
+  document.getElementById('insp-subtitle').textContent =
+    total === 0 ? 'Tidak ada tunnel aktif' : `${live}/${total} tunnel live`;
+  document.getElementById('btn-delete-all').style.display = _tunnels.length ? '' : 'none';
+
+  if (_tunnels.length === 0) {
+    container.innerHTML = `
+      <div class="empty"><span class="icon">🌐</span>
+        <span>Belum ada tunnel aktif.</span>
+        <span style="font-size:11px">Masukkan port lokal dan klik <b>Start Tunnel</b>.</span>
+      </div>`;
+    return;
+  }
+  container.innerHTML = _tunnels.map(cardHTML).join('');
+}
+
+function toggleHistory(port) {
+  _histExpanded[port] = !_histExpanded[port];
+  render();
+}
+
+function cardHTML(t) {
+  const statusText = { live:'Live', starting:'Menghubungkan…', reconnecting:'Reconnecting…', stopped:'Stopped' }[t.status] ?? t.status;
+  const reqCnt  = _reqCounts[t.localPort] || 0;
+  const uptime  = t.startedAt && t.status !== 'stopped' ? formatUptime(Math.floor((Date.now() - t.startedAt) / 1000)) : '–';
+  const labelTxt = t.label || '<span style="opacity:.45">Tambah nama…</span>';
+  const rc = t.reconnectCount || 0;
+  const hist = t.urlHistory || [];
+
+  const urlRow = t.url
+    ? `<div class="url-row">
+         <span class="url-text" onclick="openUrl('${esc(t.url)}')" title="Buka di browser">${esc(t.url)}</span>
+         <button class="btn-icon" title="Salin URL" onclick="copyUrl('${esc(t.url)}')">⎘</button>
+         <button class="btn-icon" title="QR Code"   onclick="openQR('${esc(t.url)}')">▦</button>
+       </div>`
+    : `<div class="url-row">
+         <span class="url-placeholder">${t.status === 'stopped' ? '–' : 'Menunggu Cloudflare URL…'}</span>
+       </div>`;
+
+  // URL History — show if more than 1 URL ever received
+  const histSection = hist.length > 1 ? (() => {
+    const expanded = _histExpanded[t.localPort];
+    const prev = hist.slice(0, -1).reverse(); // all except current, newest first
+    const items = expanded ? prev.map(u => `
+      <div class="url-history-item">
+        <span title="${esc(u)}">${esc(u)}</span>
+        <button onclick="copyUrl('${esc(u)}')" title="Salin">⎘</button>
+      </div>`).join('') : '';
+    return `<div class="url-history">
+      <button class="url-history-toggle" onclick="toggleHistory(${t.localPort})">
+        <span>${expanded ? '▾' : '▸'}</span>
+        <span>${prev.length} URL sebelumnya</span>
+      </button>
+      ${expanded ? `<div class="url-history-list">${items}</div>` : ''}
+    </div>`;
+  })() : '';
+
+  const actions = t.status === 'stopped'
+    ? `<button class="btn-action btn-restart" onclick="restartTunnel(${t.localPort})">↺ Restart</button>
+       <button class="btn-action btn-delete"  onclick="deleteTunnel(${t.localPort})">🗑 Hapus</button>`
+    : `<button class="btn-action btn-inspector" onclick="showInspector(${t.localPort})" ${t.status !== 'live' ? 'style="opacity:.4;pointer-events:none"' : ''}>🔍 Buka Inspector</button>
+       <button class="btn-action btn-stop"   onclick="stopTunnel(${t.localPort})">■ Stop</button>
+       <button class="btn-action btn-delete" onclick="deleteTunnel(${t.localPort})" style="flex:0;padding:6px 12px">🗑</button>`;
+
+  return `
+    <div class="card ${t.status}">
+      <div class="card-top">
+        <span class="port-badge">:${t.localPort}</span>
+        <span class="status-dot dot-${t.status}"></span>
+        <span class="status-label ${t.status}">${statusText}</span>
+        <div class="card-meta">
+          <span class="meta-chip green" id="req-count-${t.localPort}">${reqCnt} req</span>
+          <span class="meta-chip" id="uptime-${t.localPort}">${uptime}</span>
+          ${rc > 0 ? `<span class="meta-chip warn" title="${rc}x reconnect">↻${rc}</span>` : ''}
+          <button class="btn-autostart ${t.autoStart ? 'on' : ''}"
+            onclick="toggleAutoStart(${t.localPort})" title="${t.autoStart ? 'Auto-start aktif' : 'Auto-start nonaktif'}">
+            ⚡
+          </button>
+        </div>
+      </div>
+      <div class="card-label">
+        <span id="label-span-${t.localPort}" class="label-text" onclick="editLabel(${t.localPort})" title="Klik untuk ubah nama">${labelTxt}</span>
+      </div>
+      ${urlRow}
+      ${histSection}
+      <div class="card-actions">${actions}</div>
+    </div>`;
+}
+
+// ═══ Utils ═════════════════════════════════════════════════════════════════════
+function setErr(msg) { document.getElementById('err-msg').textContent = msg; }
+function showToast() {
+  const el = document.getElementById('toast');
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatUptime(s) {
+  if (s < 60) return `${s}d`;
+  const m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (d > 0) return `${d}h ${h % 24}j`;
+  if (h > 0) return `${h}j ${m % 60}m`;
+  return `${m}m ${s % 60}d`;
+}
+
+init();
+</script>
+</body>
+</html>

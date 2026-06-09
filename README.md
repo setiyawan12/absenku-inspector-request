@@ -1,4 +1,4 @@
-# ⚡ absenku Inspector request
+# ⚡ Absenku Net
 
 Aplikasi tunnel HTTP gratis — seperti ngrok, tapi tanpa biaya dan tanpa akun.  
 Buat URL publik HTTPS instan, lalu inspect semua request masuk lewat dashboard browser.

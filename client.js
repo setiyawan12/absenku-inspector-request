@@ -1,6 +1,6 @@
 'use strict';
 /**
- * absenku Inspector request — standalone client
+ * Absenku Net — standalone client
  * (Dipakai oleh start.sh. Untuk CLI gunakan: absenku http <port>)
  *
  * Usage: node client.js <localPort> [serverHost] [serverClientPort]
@@ -18,7 +18,7 @@ if (!LOCAL_PORT || isNaN(LOCAL_PORT)) {
   process.exit(1);
 }
 
-console.log(`\nabsenku Inspector request client → forwarding localhost:${LOCAL_PORT}`);
+console.log(`\nAbsenku Net client → forwarding localhost:${LOCAL_PORT}`);
 console.log(`Connecting to ${SERVER_HOST}:${CLIENT_PORT}…\n`);
 
 const client = createClient();

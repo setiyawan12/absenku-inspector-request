@@ -46,7 +46,7 @@ const localPorts = cliPorts.length > 0
 
 if (subcommand !== 'http' || localPorts.length === 0) {
   console.log('');
-  console.log('  ⚡ absenku Inspector request');
+  console.log('  ⚡ Absenku Net');
   console.log('');
   console.log('  Usage:   absenku http <port> [port2] [port3...] [options]');
   console.log('  Example: absenku http 8000');
@@ -86,7 +86,7 @@ const persist                = require(path.join(root, 'lib/persist'));
 // ── Banner ────────────────────────────────────────────────────────────────────
 console.log('');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('  ⚡ absenku Inspector request  ×  Cloudflare Tunnel');
+console.log('  ⚡ Absenku Net  ×  Cloudflare Tunnel');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('');
 

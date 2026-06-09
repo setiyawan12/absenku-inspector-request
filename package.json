@@ -1,7 +1,7 @@
 {
-  "name": "absenku-inspector-request",
-  "version": "1.0.0",
-  "description": "Absenku Inspector Request — HTTP tunnel & request inspector via Cloudflare",
+  "name": "absenku-net",
+  "version": "1.1.0",
+  "description": "Absenku Net — HTTP tunnel & request inspector via Cloudflare",
   "author": { "name": "Absenku", "email": "noreply@absenku.app" },
   "main": "electron/main.js",
   "bin": {
@@ -18,8 +18,8 @@
     "build:linux": "electron-builder --linux"
   },
   "build": {
-    "appId"          : "com.absenku.inspector",
-    "productName"    : "Absenku Inspector",
+    "appId"          : "com.absenku.net",
+    "productName"    : "Absenku Net",
     "copyright"      : "Copyright © 2026 Absenku",
     "directories"    : { "output": "dist" },
     "files"          : [

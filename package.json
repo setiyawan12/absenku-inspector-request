@@ -2,6 +2,7 @@
   "name": "absenku-inspector-request",
   "version": "1.0.0",
   "description": "Absenku Inspector Request — HTTP tunnel & request inspector via Cloudflare",
+  "author": "Absenku",
   "main": "electron/main.js",
   "bin": {
     "absenku": "./bin/absenku.js"

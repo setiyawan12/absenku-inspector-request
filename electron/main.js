@@ -343,7 +343,9 @@ function buildTrayMenu() {
 }
 
 function createTray() {
-  _tray = new Tray(nativeImage.createFromPath(ICON_FILE));
+  const trayIcon = nativeImage.createFromPath(ICON_FILE).resize({ width: 16, height: 16 });
+  trayIcon.setTemplateImage(true); // macOS: ikuti warna menu bar (light/dark)
+  _tray = new Tray(trayIcon);
   _tray.setToolTip('Absenku Net');
   _tray.setContextMenu(buildTrayMenu());
   _tray.on('click', () => _showLauncherWin());

@@ -53,7 +53,8 @@
         }
       ],
       "entitlements": "scripts/entitlements.mac.plist",
-      "entitlementsInherit": "scripts/entitlements.mac.plist"
+      "entitlementsInherit": "scripts/entitlements.mac.plist",
+      "notarize": false
     },
     "win": {
       "icon": "electron/icon.png",

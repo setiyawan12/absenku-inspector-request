@@ -42,7 +42,7 @@
     "mac": {
       "icon": "electron/icon.png",
       "category": "public.app-category.developer-tools",
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "target": [
         {
@@ -51,7 +51,9 @@
             "arm64"
           ]
         }
-      ]
+      ],
+      "entitlements": "scripts/entitlements.mac.plist",
+      "entitlementsInherit": "scripts/entitlements.mac.plist"
     },
     "win": {
       "icon": "electron/icon.png",
@@ -82,13 +84,14 @@
         }
       ]
     },
-    "afterSign": "scripts/afterSign.js"
+    "afterSign": "scripts/notarize.js"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "@electron/notarize": "^2.3.0"
   }
 }

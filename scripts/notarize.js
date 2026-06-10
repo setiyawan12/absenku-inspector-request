@@ -13,8 +13,8 @@ exports.default = async function notarizing(context) {
   if (electronPlatformName !== 'darwin') return;
 
   // Skip jika env vars tidak ada (dev lokal)
-  if (!process.env.APPLE_ID || !process.env.APPLE_APP_PASSWORD || !process.env.APPLE_TEAM_ID) {
-    console.log('[notarize] Skipping — APPLE_ID/APPLE_APP_PASSWORD/APPLE_TEAM_ID not set');
+  if (!process.env.APPLE_ID || !process.env.APPLE_APP_SPECIFIC_PASSWORD || !process.env.APPLE_TEAM_ID) {
+    console.log('[notarize] Skipping — APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID not set');
     return;
   }
 
@@ -28,7 +28,7 @@ exports.default = async function notarizing(context) {
     tool      : 'notarytool',
     appPath,
     appleId      : process.env.APPLE_ID,
-    appleIdPassword: process.env.APPLE_APP_PASSWORD,
+    appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,
     teamId       : process.env.APPLE_TEAM_ID,
   });
 

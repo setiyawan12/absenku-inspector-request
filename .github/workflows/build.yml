@@ -28,7 +28,7 @@ jobs:
       - run: npm install
 
       - name: Set version from tag
-        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version
+        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version --allow-same-version
 
       - name: Import signing certificate
         env:
@@ -86,7 +86,7 @@ jobs:
 
       - name: Set version from tag
         shell: bash
-        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version
+        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version --allow-same-version
 
       - name: Build EXE
         env:
@@ -118,7 +118,7 @@ jobs:
       - run: npm install
 
       - name: Set version from tag
-        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version
+        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version --allow-same-version
 
       - name: Build DEB + AppImage
         env:

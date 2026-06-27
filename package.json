@@ -1,6 +1,6 @@
 {
   "name": "wan-net",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
     "name": "WAN NET",
@@ -84,9 +84,7 @@
       "desktop": {
         "Name": "WAN NET",
         "Comment": "HTTP Tunnel & Request Inspector",
-        "Exec": "wan-net --no-sandbox %U",
         "Terminal": "false",
-        "Type": "Application",
         "Categories": "Development;Network;"
       },
       "target": [

@@ -13,9 +13,11 @@ contextBridge.exposeInMainWorld('wanNet', {
   openExternal    : (url)        => ipcRenderer.invoke('open-external', url),
   openSettings    : ()           => ipcRenderer.invoke('open-settings'),
   copyText        : (text)       => ipcRenderer.invoke('copy-text', text),
+  showNotification: (title, body)=> ipcRenderer.invoke('show-notification', title, body),
   generateQR      : (url)        => ipcRenderer.invoke('generate-qr', url),
-  setLabel        : (port, label)=> ipcRenderer.invoke('set-label', port, label),
-  toggleAutoStart : (port)       => ipcRenderer.invoke('toggle-autostart', port),
+  setLabel        : (port, label)        => ipcRenderer.invoke('set-label', port, label),
+  toggleAutoStart : (port)               => ipcRenderer.invoke('toggle-autostart', port),
+  setRateLimit    : (key, maxReq, winMs) => ipcRenderer.invoke('set-rate-limit', key, maxReq, winMs),
 
   // Cloudflare login & named tunnel
   cfLoginStatus    : ()        => ipcRenderer.invoke('cf:login-status'),
@@ -42,4 +44,7 @@ contextBridge.exposeInMainWorld('wanNet', {
   onTunnelUpdate: (cb) => {
     ipcRenderer.on('tunnel-update', (_evt, tunnels) => cb(tunnels));
   },
+  onUpdateAvailable : (cb) => ipcRenderer.on('update-available',  (_e, info) => cb(info)),
+  onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_e, info) => cb(info)),
+  installUpdate     : ()   => ipcRenderer.invoke('install-update'),
 });

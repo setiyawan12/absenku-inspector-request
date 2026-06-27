@@ -433,7 +433,7 @@ ipcMain.handle('cf:save-api-config', (_e, { token, zoneId, accountId }) => {
 });
 
 ipcMain.handle('cf:list-dns-records', async () => {
-  const { cfApiToken, cfZoneId } = _cfg;
+  const { cfApiToken, cfZoneId } = _c();
   if (!cfApiToken || !cfZoneId) return { ok: false, needsSetup: true };
   try {
     const res = await _cfApiRequest(cfApiToken, `/zones/${cfZoneId}/dns_records?type=CNAME&per_page=200`);
@@ -443,7 +443,7 @@ ipcMain.handle('cf:list-dns-records', async () => {
 });
 
 ipcMain.handle('cf:add-cname', async (_e, { name, tunnelId, port }) => {
-  const { cfApiToken, cfZoneId } = _cfg;
+  const { cfApiToken, cfZoneId } = _c();
   if (!cfApiToken || !cfZoneId) return { ok: false, needsSetup: true };
   try {
     const content = `${tunnelId}.cfargotunnel.com`;
@@ -466,7 +466,7 @@ ipcMain.handle('cf:add-cname', async (_e, { name, tunnelId, port }) => {
 });
 
 ipcMain.handle('cf:delete-cname', async (_e, { recordId, hostname }) => {
-  const { cfApiToken, cfZoneId } = _cfg;
+  const { cfApiToken, cfZoneId } = _c();
   if (!cfApiToken || !cfZoneId) return { ok: false, needsSetup: true };
   try {
     const res = await _cfApiRequest(cfApiToken, `/zones/${cfZoneId}/dns_records/${recordId}`, 'DELETE');

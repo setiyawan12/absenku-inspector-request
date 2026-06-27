@@ -6,6 +6,7 @@ let _reqCounts      = {};    // { [localPort]: count }
 let _qrCurrentUrl   = '';
 let _toastTimer;
 let _uptimeTimer;
+let _pollTimer;
 let _histExpanded   = {};    // { [tunnelKey]: bool } — expanded state for URL history
 
 // Cloudflare state
@@ -30,10 +31,18 @@ function toggleTheme() {
   try { frame.contentWindow.postMessage({ type: 'wan-net-theme', theme }, '*'); } catch {}
 }
 window.addEventListener('message', e => {
-  if (!e.data || e.data.type !== 'wan-net-theme') return;
-  const isLight = e.data.theme === 'light';
-  localStorage.setItem('wan-net-theme', e.data.theme);
-  _applyLauncherTheme(isLight);
+  if (!e.data) return;
+  if (e.data.type === 'wan-net-theme') {
+    const isLight = e.data.theme === 'light';
+    localStorage.setItem('wan-net-theme', e.data.theme);
+    _applyLauncherTheme(isLight);
+    return;
+  }
+  // Inspector minta native notification via Electron (Web Notification API
+  // tidak reliable di production macOS build)
+  if (e.data.type === 'wan-net-notify') {
+    window.wanNet.showNotification(e.data.title || 'WAN NET', e.data.body || '');
+  }
 });
 (function() {
   const saved = localStorage.getItem('wan-net-theme');
@@ -52,14 +61,38 @@ async function init() {
 
   window.wanNet.onTunnelUpdate(tunnels => { _tunnels = tunnels; render(); });
 
-  setInterval(pollRequests, 3000);
+  _pollTimer   = setInterval(pollRequests, 3000);
   pollRequests();
 
   // Uptime updater (every second, DOM only — no re-render)
   _uptimeTimer = setInterval(updateUptimes, 1000);
 
+  // Cleanup intervals saat window unload (penting kalau HMR / reload)
+  window.addEventListener('beforeunload', () => {
+    clearInterval(_pollTimer);
+    clearInterval(_uptimeTimer);
+  }, { once: true });
+
   // Check Cloudflare login status
   await initCF();
+
+  // ── Auto-update listeners ──────────────────────────────────────────────────
+  if (window.wanNet.onUpdateAvailable) {
+    window.wanNet.onUpdateAvailable(info => {
+      const banner = document.getElementById('update-banner');
+      document.getElementById('update-banner-txt').textContent =
+        `Update v${info.version} tersedia — mengunduh…`;
+      banner.style.display = 'flex';
+    });
+    window.wanNet.onUpdateDownloaded(info => {
+      const banner = document.getElementById('update-banner');
+      document.getElementById('update-banner-txt').textContent =
+        `Update v${info.version} siap — restart untuk install`;
+      const btn = document.getElementById('update-install-btn');
+      if (btn) btn.style.display = '';
+      banner.style.display = 'flex';
+    });
+  }
 }
 
 // ═══ Cloudflare ═══════════════════════════════════════════════════════════════
@@ -576,14 +609,40 @@ async function pollRequests() {
     const r = await fetch(`http://localhost:${_inspPort}/log`);
     if (!r.ok) return;
     const log = await r.json();
-    document.getElementById('insp-requests').textContent = `${log.length} request`;
+
+    // ── Per-port counts (untuk chip di kartu) ─────────────────────────────────
     const counts = {};
     for (const e of log) if (e.localPort) counts[e.localPort] = (counts[e.localPort] || 0) + 1;
     _reqCounts = counts;
-    // Update count chips in-place (no full re-render)
     for (const [port, cnt] of Object.entries(counts)) {
       const el = document.getElementById(`req-count-${port}`);
       if (el) el.textContent = `${cnt} req`;
+    }
+
+    // ── Global stats ──────────────────────────────────────────────────────────
+    const total  = log.length;
+    const errors = log.filter(e => (e.status >= 400 && e.status !== null) || e.status === 0).length;
+    const done   = log.filter(e => e.ms != null);
+    const avgMs  = done.length ? Math.round(done.reduce((a, e) => a + e.ms, 0) / done.length) : 0;
+    const errPct = total ? Math.round(errors / total * 100) : 0;
+    const hasErr = errors > 0;
+
+    // Bottom bar request button
+    const reqBtn = document.getElementById('insp-requests');
+    reqBtn.textContent = hasErr ? `${total} req · ${errors} err` : `${total} req`;
+    reqBtn.style.color = hasErr ? 'var(--red)' : '';
+
+    // Mini global stats bar
+    const gs = document.getElementById('global-stats');
+    if (total > 0) {
+      gs.style.display = 'flex';
+      document.getElementById('gs-total').textContent = `${total} req`;
+      const gsErr = document.getElementById('gs-err');
+      gsErr.textContent  = `${errors} err${total ? ' ('+errPct+'%)' : ''}`;
+      gsErr.style.color  = hasErr ? 'var(--red)' : 'var(--green)';
+      document.getElementById('gs-avg').textContent = avgMs ? `avg ${avgMs}ms` : '– ms';
+    } else {
+      gs.style.display = 'none';
     }
   } catch {}
 }
@@ -725,6 +784,18 @@ async function restartTunnel(key) {
 async function toggleAutoStart(key) {
   await window.wanNet.toggleAutoStart(key);
 }
+async function setRateLimit(key) {
+  const t = _tunnels.find(x => x.tunnelKey === key);
+  const current = t?.rateLimit?.maxReq || 0;
+  const input = prompt(
+    `Rate limit untuk ${key}\n\nMaksimal request per detik (0 = nonaktif):`,
+    String(current)
+  );
+  if (input === null) return;
+  const maxReq = parseInt(input, 10) || 0;
+  const res = await window.wanNet.setRateLimit(key, maxReq, 1000);
+  if (res && res.ok) showToast();
+}
 async function removeDomain(key) {
   await window.wanNet.cfDeleteDomain(key);
   pushUpdate();
@@ -820,10 +891,11 @@ function cardHTML(t) {
   const statusText = { live:'Live', starting:'Menghubungkan…', reconnecting:'Reconnecting…', stopped:'Stopped' }[t.status] ?? t.status;
   const reqCnt  = _reqCounts[k] || 0;
   const uptime  = t.startedAt && t.status !== 'stopped' ? formatUptime(Math.floor((Date.now() - t.startedAt) / 1000)) : '–';
-  const labelTxt = t.label || '<span style="opacity:.4">Tambah nama…</span>';
+  const labelTxt = t.label ? esc(t.label) : '<span style="opacity:.4">Tambah nama…</span>';
   const rc   = t.reconnectCount || 0;
   const hist = t.urlHistory || [];
-  const kq   = `'${k}'`; // single-quoted key for onclick (keys never contain single quotes)
+  const rl   = t.rateLimit || null;
+  const kq   = `'${escOnclick(k)}'`; // key di-escape untuk JS string + HTML attr context
 
   // Named tunnel badge
   const namedBadge = t.customDomain
@@ -841,9 +913,9 @@ function cardHTML(t) {
     <div class="tcard-url">
       <div class="tcard-url-inner">
         ${t.url
-          ? `<span class="tcard-url-link" onclick="openUrl('${esc(t.url)}')" title="Buka di browser">${esc(t.url)}</span>
-             <button class="btn-icon" title="Salin URL" onclick="copyUrl('${esc(t.url)}')">⎘</button>
-             <button class="btn-icon" title="QR Code"   onclick="openQR('${esc(t.url)}')">▦</button>`
+          ? `<span class="tcard-url-link" onclick="openUrl('${escOnclick(t.url)}')" title="Buka di browser">${esc(t.url)}</span>
+             <button class="btn-icon" title="Salin URL" onclick="copyUrl('${escOnclick(t.url)}')">⎘</button>
+             <button class="btn-icon" title="QR Code"   onclick="openQR('${escOnclick(t.url)}')">▦</button>`
           : `<span class="tcard-url-placeholder">${t.status === 'stopped' ? '–' : t.customDomain ? `Menghubungkan ke ${esc(t.customDomain)}…` : 'Menunggu URL…'}</span>`
         }
       </div>
@@ -856,7 +928,7 @@ function cardHTML(t) {
     const items = expanded ? prev.map(u => `
       <div class="url-history-item">
         <span title="${esc(u)}">${esc(u)}</span>
-        <button onclick="copyUrl('${esc(u)}')" title="Salin">⎘</button>
+        <button onclick="copyUrl('${escOnclick(u)}')" title="Salin">⎘</button>
       </div>`).join('') : '';
     return `<div class="url-history">
       <button class="url-history-toggle" onclick="toggleHistory(${kq})">
@@ -872,6 +944,7 @@ function cardHTML(t) {
     ? `<button class="tact warn"   onclick="restartTunnel(${kq})">↺ Restart</button>
        <button class="tact danger" onclick="deleteTunnel(${kq})">🗑 Hapus</button>`
     : `<button class="tact primary" onclick="showInspector(${kq})" ${t.status !== 'live' ? 'disabled' : ''}>🔍 Inspector</button>
+       <button class="tact sm" onclick="setRateLimit(${kq})" title="${rl ? `🚦 ${rl.maxReq} req/s — klik untuk ubah` : 'Set rate limit'}">🚦${rl ? rl.maxReq+'/s' : ''}</button>
        <button class="tact"         onclick="stopTunnel(${kq})">■ Stop</button>
        <button class="tact danger sm" onclick="deleteTunnel(${kq})" title="Hapus">🗑</button>`;
 
@@ -889,6 +962,7 @@ function cardHTML(t) {
           <span class="chip green" id="req-count-${k}">${reqCnt} req</span>
           <span class="chip" id="uptime-${k}">${uptime}</span>
           ${rc > 0 ? `<span class="chip warn" title="${rc}x reconnect">↻${rc}</span>` : ''}
+          ${rl ? `<span class="chip warn" title="Rate limit aktif: ${rl.maxReq} req/s">🚦${rl.maxReq}/s</span>` : ''}
           <button class="btn-autostart ${t.autoStart ? 'on' : ''}"
             onclick="toggleAutoStart(${kq})"
             title="${t.autoStart ? 'Auto-start aktif' : 'Auto-start nonaktif'}">⚡</button>
@@ -911,6 +985,19 @@ function showToast() {
 }
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/**
+ * escOnclick(s) — aman untuk nilai di dalam onclick="fn('VALUE')"
+ * Gabungan dua konteks:
+ *   1. HTML attribute  → escape & < > "
+ *   2. JS string (\'…')→ escape \ dan ' (sebagai \x27 agar HTML parser
+ *      tidak decode ulang sebelum JS engine melihatnya)
+ */
+function escOnclick(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/\\/g,'\\\\').replace(/'/g,'\\x27')
+    .replace(/\n/g,'\\n').replace(/\r/g,'\\r');
 }
 function formatUptime(s) {
   if (s < 60) return `${s}d`;

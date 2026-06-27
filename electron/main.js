@@ -15,6 +15,9 @@ const path    = require('path');
 const fs      = require('fs');
 const os      = require('os');
 const QRCode  = require('qrcode');
+// electron-updater may not be installed yet (npm install required after adding dependency)
+let autoUpdater = null;
+try { ({ autoUpdater } = require('electron-updater')); } catch {}
 
 // ── Paths ─────────────────────────────────────────────────────────────────────
 const ROOT      = path.join(__dirname, '..');
@@ -95,6 +98,7 @@ function _snapshotTunnels() {
     urlHistory     : t.urlHistory || [],
     customDomain   : t.customDomain || null,
     tunnelId       : t.tunnelId || null,
+    rateLimit      : state.tunnels.get(t.tunnelKey)?.rateLimit || null,
   }));
 }
 
@@ -416,6 +420,10 @@ ipcMain.handle('open-inspector',()          => _showLauncherWin());
 ipcMain.handle('open-external', (_e, url)  => shell.openExternal(url));
 ipcMain.handle('open-settings', ()          => openSettings());
 ipcMain.handle('copy-text',     (_e, text) => { clipboard.writeText(text); return true; });
+ipcMain.handle('show-notification', (_e, title, body) => {
+  if (!Notification.isSupported()) return;
+  new Notification({ title: String(title), body: String(body), icon: ICON_FILE }).show();
+});
 ipcMain.handle('generate-qr', async (_e, url) => {
   try {
     return await QRCode.toDataURL(url, { width: 256, margin: 2,
@@ -427,6 +435,22 @@ ipcMain.handle('set-label', (_e, key, label) => {
   if (label && label.trim()) _cfg.labels[key] = label.trim();
   else delete _cfg.labels[key];
   saveConfig(_cfg);
+  pushUpdate();
+  return { ok: true };
+});
+ipcMain.handle('install-update', () => {
+  try { autoUpdater?.quitAndInstall(); } catch {}
+});
+ipcMain.handle('set-rate-limit', (_e, key, maxReq, windowMs) => {
+  const tunnel = state.tunnels.get(key);
+  if (!tunnel) return { ok: false, error: 'Tunnel not found' };
+  if (!maxReq || maxReq <= 0) {
+    tunnel.rateLimit  = null;
+    tunnel.rateWindow = [];
+  } else {
+    tunnel.rateLimit = { maxReq: Number(maxReq), windowMs: Number(windowMs) || 1000 };
+    if (!tunnel.rateWindow) tunnel.rateWindow = [];
+  }
   pushUpdate();
   return { ok: true };
 });
@@ -477,6 +501,24 @@ app.whenReady().then(async () => {
 
   createTray();
   createLauncherWindow();
+
+  // ── Auto-update (electron-updater) ────────────────────────────────────────
+  if (autoUpdater) {
+    autoUpdater.autoDownload    = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    const _sendUpdate = (channel, info) => {
+      if (_launcherWin && !_launcherWin.isDestroyed()) {
+        _launcherWin.webContents.send(channel, info);
+      }
+    };
+    autoUpdater.on('update-available',  info => _sendUpdate('update-available', info));
+    autoUpdater.on('update-downloaded', info => _sendUpdate('update-downloaded', info));
+    autoUpdater.on('error', err => console.warn('autoUpdater error:', err.message));
+    // Check 5 s after startup so the window is ready
+    setTimeout(() => {
+      try { autoUpdater.checkForUpdatesAndNotify(); } catch (e) { console.warn('update check failed:', e.message); }
+    }, 5000);
+  }
 
   // Auto-start saved tunnels
   const autoStart = Array.isArray(_cfg.autoStart) ? _cfg.autoStart : [];

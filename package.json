@@ -88,10 +88,13 @@
     "afterSign": "scripts/notarize.js",
     "publish": {
       "provider": "github",
+      "owner": "setiyawan12",
+      "repo": "absenku-inspector-request",
       "releaseType": "release"
     }
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

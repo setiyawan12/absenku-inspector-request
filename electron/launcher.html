@@ -71,12 +71,21 @@
       <span style="font-size:11px">Masukkan port lokal dan klik <b>Start Tunnel</b>.</span></div>
   </div>
 
+  <!-- Mini global stats — hanya muncul kalau ada request -->
+  <div id="global-stats">
+    <span class="gs-item" id="gs-total">0 req</span>
+    <span class="gs-sep">·</span>
+    <span class="gs-item" id="gs-err">0 err</span>
+    <span class="gs-sep">·</span>
+    <span class="gs-item" id="gs-avg">– ms</span>
+  </div>
+
   <div class="insp-bar">
     <span>Inspector:</span>
     <a class="insp-bar-url" id="insp-link" href="#" onclick="showInspector(); return false;">–</a>
     <button class="btn-icon" title="Salin URL inspector" onclick="copyInsp()" style="width:22px;height:22px;font-size:11px">⎘</button>
     <span style="flex:1"></span>
-    <span id="insp-requests">0 request</span>
+    <button id="insp-requests" class="insp-req-btn" onclick="showInspector()" title="Buka Inspector">0 req</button>
   </div>
 </div>
 
@@ -214,6 +223,14 @@
 </div>
 
 <div class="copied-toast" id="toast">Disalin!</div>
+
+<!-- ═══ UPDATE BANNER ════════════════════════════════════════════════════════ -->
+<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;background:linear-gradient(90deg,#4f46e5,#7c3aed);color:#fff;font-size:12px;padding:8px 16px;display:none;align-items:center;gap:10px;box-shadow:0 -2px 12px rgba(0,0,0,.4)">
+  <span style="font-size:14px">⬆</span>
+  <span id="update-banner-txt" style="flex:1">Update tersedia…</span>
+  <button id="update-install-btn" onclick="window.wanNet.installUpdate()" style="display:none;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">↺ Restart &amp; Install</button>
+  <button onclick="document.getElementById('update-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 4px" title="Tutup">✕</button>
+</div>
 
 
 <script src="launcher.js"></script>

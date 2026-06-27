@@ -1,4 +1,4 @@
-# ⚡ Absenku Net
+# ⚡ WAN NET
 
 Aplikasi tunnel HTTP gratis — seperti ngrok, tapi tanpa biaya dan tanpa akun.  
 Buat URL publik HTTPS instan, lalu inspect semua request masuk lewat dashboard browser.
@@ -8,7 +8,7 @@ Buat URL publik HTTPS instan, lalu inspect semua request masuk lewat dashboard b
 ## Cara Kerja
 
 ```
-Internet → URL Publik (Cloudflare) → absenku → Aplikasi kamu di localhost
+Internet → URL Publik (Cloudflare) → wan-net → Aplikasi kamu di localhost
 ```
 
 Setiap request yang masuk bisa dilihat, di-replay, dan di-mock lewat dashboard di browser.
@@ -37,9 +37,9 @@ Buka terminal, masuk ke folder project ini, lalu jalankan:
 npm install -g .
 ```
 
-Selesai. Perintah `absenku` sekarang bisa dipakai dari mana saja di terminal.
+Selesai. Perintah `wan-net` sekarang bisa dipakai dari mana saja di terminal.
 
-> **Catatan:** Saat pertama kali dijalankan, `absenku` akan otomatis download `cloudflared`  
+> **Catatan:** Saat pertama kali dijalankan, `wan-net` akan otomatis download `cloudflared`  
 > (binary Cloudflare Tunnel, ~30 MB). Cukup sekali, tidak perlu diulang.
 
 ---
@@ -63,10 +63,10 @@ Contoh untuk Node.js:
 node app.js  # pastikan app berjalan di port tertentu, misal 3000
 ```
 
-### 2. Jalankan absenku
+### 2. Jalankan wan-net
 
 ```bash
-absenku http 8000
+wan-net http 8000
 ```
 
 Ganti `8000` dengan port aplikasi kamu.
@@ -100,7 +100,7 @@ Tekan `Ctrl + C` di terminal.
 ## Opsi CLI
 
 ```bash
-absenku http <port> [opsi]
+wan-net http <port> [opsi]
 ```
 
 | Opsi | Keterangan | Default |
@@ -111,7 +111,7 @@ absenku http <port> [opsi]
 
 **Contoh dengan password:**
 ```bash
-absenku http 8000 --pass rahasia123
+wan-net http 8000 --pass rahasia123
 ```
 
 Inspector akan meminta username `admin` dan password yang kamu set.
@@ -120,7 +120,7 @@ Inspector akan meminta username `admin` dan password yang kamu set.
 
 ## Dashboard Inspector
 
-Buka **http://localhost:8080** di browser saat absenku sedang berjalan.
+Buka **http://localhost:8080** di browser saat wan-net sedang berjalan.
 
 ### Apa yang bisa dilakukan:
 
@@ -154,7 +154,7 @@ Klik ikon pin pada request untuk "mengunci" request tersebut agar tetap terlihat
 
 #### Mock Response
 Klik **Mock** pada request untuk membuat mock response — saat URL tersebut dipanggil lagi,  
-absenku akan langsung balas dengan response yang sudah kamu definisikan, tanpa meneruskan ke aplikasi.
+wan-net akan langsung balas dengan response yang sudah kamu definisikan, tanpa meneruskan ke aplikasi.
 
 Berguna untuk simulasi kondisi tertentu (misal: simulasi error 500, atau response spesifik).
 
@@ -177,10 +177,10 @@ Klik **Clear** untuk menghapus semua request dari tampilan inspector.
 ## Uninstall
 
 ```bash
-npm uninstall -g absenku-inspector-request
+npm uninstall -g wan-net-inspector-request
 ```
 
-Setelah itu, perintah `absenku` tidak akan tersedia lagi.
+Setelah itu, perintah `wan-net` tidak akan tersedia lagi.
 
 > File `cloudflared` yang sudah didownload ada di dalam folder project.  
 > Hapus folder project secara manual jika tidak diperlukan lagi.
@@ -205,7 +205,7 @@ Binary `cloudflared` akan didownload secara otomatis sesuai dengan OS dan arsite
 A: Normal. Cloudflare Quick Tunnel memang memberikan URL acak setiap sesi. Ini adalah layanan gratis tanpa akun.
 
 **Q: Apakah data request saya tersimpan di server?**  
-A: Tidak. Semua data hanya tersimpan di memori komputer lokal kamu dan hilang saat absenku dihentikan.
+A: Tidak. Semua data hanya tersimpan di memori komputer lokal kamu dan hilang saat wan-net dihentikan.
 
 **Q: Bisa dipakai tanpa internet?**  
 A: Inspector dan tunnel lokal tetap berjalan, tapi URL publik tidak akan tersedia tanpa koneksi ke Cloudflare.
@@ -220,7 +220,7 @@ A: Inspector menyimpan maksimal 500 request terakhir.
 ```
 NGROK/
 ├── bin/
-│   └── absenku.js        ← CLI entry point (perintah absenku)
+│   └── wan-net.js        ← CLI entry point (perintah wan-net)
 ├── lib/
 │   ├── config.js         ← Konfigurasi port dan env vars
 │   ├── state.js          ← State bersama antar modul

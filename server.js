@@ -1,7 +1,7 @@
 'use strict';
 /**
- * Absenku Net — standalone entry point (single port)
- * For CLI multi-port usage, use: absenku http <port> [port2...]
+ * WAN NET — standalone entry point (single port)
+ * For CLI multi-port usage, use: wan-net http <port> [port2...]
  *
  * Usage: LOCAL_PORT=8000 node server.js
  */
@@ -34,7 +34,7 @@ findFreePort(8080).then(port => {
     tunnelServer.listen(TUNNEL_PORT);
     clientServer.listen(CLIENT_PORT);
 
-    console.log('\n🚀 Absenku Net ready');
+    console.log('\n🚀 WAN NET ready');
     console.log(`   Local app : http://localhost:${LOCAL_PORT}`);
     console.log(`   Tunnel    : http://localhost:${TUNNEL_PORT}  ← Cloudflare forward ke sini`);
     console.log(`   Client    : port ${CLIENT_PORT}`);

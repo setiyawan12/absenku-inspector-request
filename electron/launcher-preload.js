@@ -2,7 +2,7 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('absenku', {
+contextBridge.exposeInMainWorld('wanNet', {
   startTunnel     : (port, opts) => ipcRenderer.invoke('start-tunnel', port, opts),
   stopTunnel      : (port)       => ipcRenderer.invoke('stop-tunnel', port),
   deleteTunnel    : (port)       => ipcRenderer.invoke('delete-tunnel', port),

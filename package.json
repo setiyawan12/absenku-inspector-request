@@ -1,19 +1,19 @@
 {
-  "name": "absenku-net",
-  "version": "1.1.1",
-  "description": "Absenku Net — HTTP tunnel & request inspector via Cloudflare",
+  "name": "wan-net",
+  "version": "1.2.0",
+  "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
-    "name": "Absenku",
-    "email": "noreply@absenku.app"
+    "name": "WAN NET",
+    "email": "noreply@wan-net.app"
   },
   "main": "electron/main.js",
   "bin": {
-    "absenku": "./bin/absenku.js"
+    "wan-net": "./bin/wan-net.js"
   },
   "scripts": {
     "start": "node server.js",
     "client": "node client.js",
-    "dev": "node bin/absenku.js http 8000",
+    "dev": "node bin/wan-net.js http 8000",
     "electron": "electron .",
     "build": "electron-builder --dir",
     "build:mac": "electron-builder --mac",
@@ -21,9 +21,9 @@
     "build:linux": "electron-builder --linux"
   },
   "build": {
-    "appId": "com.absenku.net",
-    "productName": "Absenku Net",
-    "copyright": "Copyright © 2026 Absenku",
+    "appId": "com.wan-net.app",
+    "productName": "WAN NET",
+    "copyright": "Copyright © 2026 WAN NET",
     "directories": {
       "output": "dist"
     },

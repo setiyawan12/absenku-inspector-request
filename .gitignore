@@ -15,10 +15,10 @@ out/
 
 # Logs
 *.log
-absenku-log.json
+wan-net-log.json
 
 # Runtime config (user-specific, stored in userData)
-absenkurc.json
+wan-net-cfg.json
 
 # Environment
 .env
@@ -33,3 +33,10 @@ absenkurc.json
 # Cloudflared binary (downloaded at build time via CI, or placed manually)
 cloudflared
 cloudflared.exe
+
+# Old absenku log files
+absenku-log.json
+bin/absenku-log.json
+
+# Temp files from refactoring
+electron/launcher.html.new

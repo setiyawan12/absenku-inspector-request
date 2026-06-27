@@ -2,30 +2,30 @@
 'use strict';
 
 /**
- * absenku CLI
+ * wan-net CLI
  *
  * Usage:
- *   absenku http <port> [port2] [port3...] [options]
+ *   wan-net http <port> [port2] [port3...] [options]
  *
  * Options:
  *   --pass <password>      Protect inspector with password
  *
  * Examples:
- *   absenku http 8000
- *   absenku http 8000 8001 8002
- *   absenku http 8000 --pass secret123
+ *   wan-net http 8000
+ *   wan-net http 8000 8001 8002
+ *   wan-net http 8000 --pass secret123
  */
 
-// ── Load .absenkurc FIRST (before env vars so CLI args can override) ──────────
+// ── Load .wan-netrc FIRST (before env vars so CLI args can override) ──────────
 const _fs = require('fs'), _path = require('path');
 let _rc = {};
 try {
-  const _rcFile = _path.join(process.cwd(), '.absenkurc');
+  const _rcFile = _path.join(process.cwd(), '.wan-netrc');
   if (_fs.existsSync(_rcFile)) {
     _rc = JSON.parse(_fs.readFileSync(_rcFile, 'utf8'));
-    console.log('📋 Config loaded from .absenkurc');
+    console.log('📋 Config loaded from .wan-netrc');
   }
-} catch (e) { console.warn('⚠  Could not parse .absenkurc:', e.message); }
+} catch (e) { console.warn('⚠  Could not parse .wan-netrc:', e.message); }
 
 // ── Parse args ────────────────────────────────────────────────────────────────
 const args       = process.argv.slice(2);
@@ -46,16 +46,16 @@ const localPorts = cliPorts.length > 0
 
 if (subcommand !== 'http' || localPorts.length === 0) {
   console.log('');
-  console.log('  ⚡ Absenku Net');
+  console.log('  ⚡ WAN NET');
   console.log('');
-  console.log('  Usage:   absenku http <port> [port2] [port3...] [options]');
-  console.log('  Example: absenku http 8000');
-  console.log('  Example: absenku http 8000 8001 8002   # multi-port tunnel');
+  console.log('  Usage:   wan-net http <port> [port2] [port3...] [options]');
+  console.log('  Example: wan-net http 8000');
+  console.log('  Example: wan-net http 8000 8001 8002   # multi-port tunnel');
   console.log('');
   console.log('  Options:');
   console.log('    --pass <password>    Protect inspector with password');
   console.log('');
-  console.log('  Config file (.absenkurc in current directory):');
+  console.log('  Config file (.wan-netrc in current directory):');
   console.log('    { "pass": "mypassword", "ports": [8000] }');
   console.log('');
   process.exit(1);
@@ -66,7 +66,7 @@ function getFlag(flag, fallback) {
   return (i !== -1 && args[i + 1]) ? args[i + 1] : fallback;
 }
 
-// Priority: CLI flag > .absenkurc > default
+// Priority: CLI flag > .wan-netrc > default
 process.env.INSPECTOR_PASS = getFlag('--pass', _rc.pass || process.env.INSPECTOR_PASS || '');
 
 // ── Load modules ──────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ const persist                = require(path.join(root, 'lib/persist'));
 // ── Banner ────────────────────────────────────────────────────────────────────
 console.log('');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('  ⚡ Absenku Net  ×  Cloudflare Tunnel');
+console.log('  ⚡ WAN NET  ×  Cloudflare Tunnel');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('');
 

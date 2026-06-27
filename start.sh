@@ -1,5 +1,5 @@
 #!/bin/bash
-# absenku Inspector request — Public HTTPS tunnel via Cloudflare
+# wan-net Inspector request — Public HTTPS tunnel via Cloudflare
 # Usage: ./start.sh <localPort>
 # Contoh: ./start.sh 8000
 
@@ -9,7 +9,7 @@ CF="$DIR/cloudflared"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ⚡ absenku Inspector request  ×  Cloudflare Tunnel"
+echo "  ⚡ wan-net Inspector request  ×  Cloudflare Tunnel"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -45,7 +45,7 @@ cleanup() {
 }
 trap cleanup INT TERM
 
-# ── Start absenku Inspector request server ───────────────────────────────────────
+# ── Start wan-net Inspector request server ───────────────────────────────────────
 echo "▶  Starting server…"
 node "$DIR/server.js" > /tmp/.mngrok_server.log 2>&1 &
 SERVER_PID=$!

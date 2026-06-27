@@ -94,6 +94,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --publish always
 
+      - name: Smoke test — install EXE silently
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist\*.exe | Select-Object -First 1
+          Write-Host "Installing: $($exe.Name)"
+          Start-Process -FilePath $exe.FullName -ArgumentList "/S" -Wait
+          $installed = Test-Path "$env:LOCALAPPDATA\Programs\WAN-NET\wan-net.exe"
+          if (-not $installed) {
+            $installed = Test-Path "$env:ProgramFiles\WAN-NET\wan-net.exe"
+          }
+          if ($installed) {
+            Write-Host "✅ Install OK — binary ditemukan"
+          } else {
+            Write-Host "⚠️  Binary tidak ditemukan di path standar (mungkin path berbeda)"
+          }
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

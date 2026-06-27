@@ -1,6 +1,6 @@
 {
   "name": "wan-net",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
     "name": "WAN NET",
@@ -47,6 +47,12 @@
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64"
           ]

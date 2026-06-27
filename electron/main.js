@@ -507,6 +507,8 @@ app.whenReady().then(async () => {
     // autoDownload: false → kita trigger manual agar download-progress event keluar
     autoUpdater.autoDownload         = false;
     autoUpdater.autoInstallOnAppQuit = true;
+    // Dev mode: paksa baca dev-app-update.yml agar bisa test tanpa build DMG
+    if (!app.isPackaged) autoUpdater.forceDevUpdateConfig = true;
 
     const _sendUpdate = (channel, info) => {
       if (_launcherWin && !_launcherWin.isDestroyed()) {

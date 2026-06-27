@@ -19,6 +19,9 @@ const QRCode  = require('qrcode');
 let autoUpdater = null;
 try { ({ autoUpdater } = require('electron-updater')); } catch {}
 
+// ── Linux sandbox workaround ──────────────────────────────────────────────────
+if (process.platform === 'linux') app.commandLine.appendSwitch('no-sandbox');
+
 // ── Paths ─────────────────────────────────────────────────────────────────────
 const ROOT      = path.join(__dirname, '..');
 const CFG_FILE  = path.join(app.getPath('userData'), 'wan-net-cfg.json');

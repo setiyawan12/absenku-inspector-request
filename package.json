@@ -1,6 +1,6 @@
 {
   "name": "wan-net",
-  "version": "1.4.13",
+  "version": "1.5.0",
   "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
     "name": "WAN NET",
@@ -22,7 +22,7 @@
   },
   "build": {
     "appId": "com.wan-net.app",
-    "productName": "WAN NET",
+    "productName": "WAN-NET",
     "copyright": "Copyright © 2026 WAN NET",
     "directories": {
       "output": "dist"
@@ -76,6 +76,26 @@
     "linux": {
       "icon": "electron/icon.png",
       "category": "Development",
+      "executableName": "wan-net",
+      "artifactName": "WAN-NET-${version}-${arch}.${ext}",
+      "executableArgs": [
+        "--no-sandbox"
+      ],
+      "depends": [
+        "libgtk-3-0",
+        "libgbm1",
+        "libnss3",
+        "libxss1",
+        "libasound2"
+      ],
+      "desktop": {
+        "Name": "WAN NET",
+        "Comment": "HTTP Tunnel & Request Inspector",
+        "Exec": "wan-net --no-sandbox %U",
+        "Terminal": "false",
+        "Type": "Application",
+        "Categories": "Development;Network;"
+      },
       "target": [
         {
           "target": "deb",

@@ -79,18 +79,36 @@ async function init() {
   // ── Auto-update listeners ──────────────────────────────────────────────────
   if (window.wanNet.onUpdateAvailable) {
     window.wanNet.onUpdateAvailable(info => {
-      const banner = document.getElementById('update-banner');
-      document.getElementById('update-banner-txt').textContent =
-        `Update v${info.version} tersedia — mengunduh…`;
-      banner.style.display = 'flex';
+      document.getElementById('upd-version').textContent = `Versi ${info.version}`;
+      document.getElementById('upd-title').textContent   = 'Update Tersedia';
+      document.getElementById('upd-status').textContent  = 'Mengunduh pembaruan…';
+      document.getElementById('upd-progress-wrap').style.display = 'flex';
+      document.getElementById('upd-install-btn').style.display   = 'none';
+      document.getElementById('upd-close-btn').style.display     = '';
+      document.getElementById('upd-later-btn').style.display     = '';
+      document.getElementById('upd-overlay').style.display       = 'flex';
     });
+    if (window.wanNet.onDownloadProgress) {
+      window.wanNet.onDownloadProgress(prog => {
+        const pct = Math.round(prog.percent || 0);
+        document.getElementById('upd-bar').style.width = pct + '%';
+        document.getElementById('upd-pct').textContent = pct + '%';
+        if (prog.bytesPerSecond) {
+          const kbs = (prog.bytesPerSecond / 1024).toFixed(0);
+          document.getElementById('upd-speed').textContent = kbs + ' KB/s';
+        }
+      });
+    }
     window.wanNet.onUpdateDownloaded(info => {
-      const banner = document.getElementById('update-banner');
-      document.getElementById('update-banner-txt').textContent =
-        `Update v${info.version} siap — restart untuk install`;
-      const btn = document.getElementById('update-install-btn');
-      if (btn) btn.style.display = '';
-      banner.style.display = 'flex';
+      document.getElementById('upd-title').textContent   = 'Update Siap Diinstall';
+      document.getElementById('upd-status').textContent  = `v${info.version} berhasil diunduh. Restart untuk menerapkan pembaruan.`;
+      document.getElementById('upd-bar').style.width     = '100%';
+      document.getElementById('upd-pct').textContent     = '100%';
+      document.getElementById('upd-speed').textContent   = '';
+      document.getElementById('upd-install-btn').style.display = '';
+      document.getElementById('upd-later-btn').style.display   = '';
+      document.getElementById('upd-close-btn').style.display   = '';
+      document.getElementById('upd-overlay').style.display     = 'flex';
     });
   }
 }
@@ -845,6 +863,7 @@ async function openQR(url) {
   else document.getElementById('qr-img').alt = 'Gagal generate QR';
 }
 function closeQR() { document.getElementById('qr-overlay').classList.remove('open'); }
+function closeUpdateDialog() { document.getElementById('upd-overlay').style.display = 'none'; }
 async function copyQR() {
   await window.wanNet.copyText(_qrCurrentUrl);
   showToast();

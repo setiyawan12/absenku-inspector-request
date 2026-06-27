@@ -44,7 +44,8 @@ contextBridge.exposeInMainWorld('wanNet', {
   onTunnelUpdate: (cb) => {
     ipcRenderer.on('tunnel-update', (_evt, tunnels) => cb(tunnels));
   },
-  onUpdateAvailable : (cb) => ipcRenderer.on('update-available',  (_e, info) => cb(info)),
-  onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_e, info) => cb(info)),
-  installUpdate     : ()   => ipcRenderer.invoke('install-update'),
+  onUpdateAvailable  : (cb) => ipcRenderer.on('update-available',   (_e, info) => cb(info)),
+  onDownloadProgress : (cb) => ipcRenderer.on('download-progress',  (_e, prog) => cb(prog)),
+  onUpdateDownloaded : (cb) => ipcRenderer.on('update-downloaded',  (_e, info) => cb(info)),
+  installUpdate      : ()   => ipcRenderer.invoke('install-update'),
 });

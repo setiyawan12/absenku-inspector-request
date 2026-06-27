@@ -224,12 +224,36 @@
 
 <div class="copied-toast" id="toast">Disalin!</div>
 
-<!-- ═══ UPDATE BANNER ════════════════════════════════════════════════════════ -->
-<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;background:linear-gradient(90deg,#4f46e5,#7c3aed);color:#fff;font-size:12px;padding:8px 16px;display:none;align-items:center;gap:10px;box-shadow:0 -2px 12px rgba(0,0,0,.4)">
-  <span style="font-size:14px">⬆</span>
-  <span id="update-banner-txt" style="flex:1">Update tersedia…</span>
-  <button id="update-install-btn" onclick="window.wanNet.installUpdate()" style="display:none;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">↺ Restart &amp; Install</button>
-  <button onclick="document.getElementById('update-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;padding:0 4px" title="Tutup">✕</button>
+<!-- ═══ UPDATE DIALOG ═════════════════════════════════════════════════════════ -->
+<div id="update-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:var(--bg2,#161622);border:1px solid rgba(129,140,248,.25);border-radius:16px;padding:28px 28px 24px;width:340px;box-shadow:0 24px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:16px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">⬆️</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:var(--fg,#e2e8f0)" id="upd-title">Update Tersedia</div>
+        <div style="font-size:11px;color:var(--muted,#6b7280);margin-top:2px" id="upd-version"></div>
+      </div>
+      <button id="upd-close-btn" onclick="closeUpdateDialog()" style="background:none;border:none;color:var(--muted,#6b7280);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px" title="Tutup">✕</button>
+    </div>
+    <!-- Status text -->
+    <div style="font-size:12px;color:var(--muted,#6b7280)" id="upd-status">Memeriksa pembaruan…</div>
+    <!-- Progress bar -->
+    <div id="upd-progress-wrap" style="display:none;flex-direction:column;gap:6px">
+      <div style="height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden">
+        <div id="upd-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#4f46e5,#7c3aed);border-radius:99px;transition:width .3s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted,#6b7280)">
+        <span id="upd-pct">0%</span>
+        <span id="upd-speed"></span>
+      </div>
+    </div>
+    <!-- Action buttons -->
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+      <button id="upd-later-btn" onclick="closeUpdateDialog()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--fg,#e2e8f0);padding:7px 16px;border-radius:8px;font-size:12px;cursor:pointer">Nanti</button>
+      <button id="upd-install-btn" onclick="window.wanNet.installUpdate()" style="display:none;background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none;color:#fff;padding:7px 18px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">↺ Restart &amp; Install</button>
+    </div>
+  </div>
 </div>
 
 

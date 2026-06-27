@@ -512,6 +512,7 @@ app.whenReady().then(async () => {
       }
     };
     autoUpdater.on('update-available',  info => _sendUpdate('update-available', info));
+    autoUpdater.on('download-progress', prog => _sendUpdate('download-progress', prog));
     autoUpdater.on('update-downloaded', info => _sendUpdate('update-downloaded', info));
     autoUpdater.on('error', err => console.warn('autoUpdater error:', err.message));
     // Check 5 s after startup so the window is ready

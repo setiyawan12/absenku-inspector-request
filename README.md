@@ -1,80 +1,123 @@
 # ⚡ WAN NET
 
-Aplikasi tunnel HTTP gratis — seperti ngrok, tapi tanpa biaya dan tanpa akun.  
-Buat URL publik HTTPS instan, lalu inspect semua request masuk lewat dashboard browser.
+Buat URL publik HTTPS instan dari komputer kamu — gratis, tanpa akun, tanpa batas.  
+Setiap request yang masuk bisa dilihat, di-replay, di-mock, dan diekspor langsung dari dashboard.
+
+```
+Internet  →  URL Publik (Cloudflare)  →  WAN NET  →  Aplikasi kamu di localhost
+```
 
 ---
 
-## Cara Kerja
+## Dua Cara Pakai
 
-```
-Internet → URL Publik (Cloudflare) → wan-net → Aplikasi kamu di localhost
-```
-
-Setiap request yang masuk bisa dilihat, di-replay, dan di-mock lewat dashboard di browser.
+| | Desktop App | CLI (Terminal) |
+|---|---|---|
+| **Cocok untuk** | Semua orang | Developer |
+| **Cara pakai** | Klik-klik | Ketik perintah |
+| **Fitur** | Lengkap + GUI | Lengkap |
+| **Syarat** | Tidak ada | Node.js |
 
 ---
 
-## Syarat
+## 🖥 Cara 1 — Desktop App (Direkomendasikan)
 
-Kamu butuh **Node.js** versi 16 ke atas.
+### Download & Install
 
-**Cek apakah Node.js sudah terinstall:**
+1. Buka halaman **Releases**: [github.com/setiyawan12/absenku-inspector-request/releases](https://github.com/setiyawan12/absenku-inspector-request/releases)
+2. Pilih versi terbaru
+3. Download file sesuai OS kamu:
+
+| File | OS |
+|------|----|
+| `WAN NET-x.x.x-arm64.dmg` | macOS (Apple Silicon M1/M2/M3) |
+| `WAN NET-x.x.x.dmg` | macOS (Intel) |
+| `WAN NET-x.x.x-win-installer.exe` | Windows |
+| `WAN NET-x.x.x.AppImage` | Linux |
+| `WAN NET-x.x.x.deb` | Linux (Debian/Ubuntu) |
+
+4. Install seperti aplikasi biasa:
+   - **macOS** → buka `.dmg`, drag ke folder Applications
+   - **Windows** → jalankan `.exe`, ikuti wizard
+   - **Linux** → jalankan `.AppImage` langsung atau install `.deb` via `sudo dpkg -i`
+
+> **macOS — muncul peringatan "developer tidak dikenal"?**  
+> Buka **System Settings → Privacy & Security → Security** → klik **Open Anyway**
+
+---
+
+### Menggunakan Desktop App
+
+**1. Jalankan aplikasi lokal kamu dulu** (misal di port 3000):
+```bash
+node app.js
+# atau
+php -S localhost:3000
+# atau apapun yang berjalan di localhost
+```
+
+**2. Buka WAN NET** dari Applications / Start Menu
+
+**3. Masukkan port** aplikasi kamu di kolom input, klik **▶ Start**
+
+**4. URL publik muncul** dalam beberapa detik — bagikan ke siapa saja!
+
+**5. Klik 🔍 Inspector** untuk melihat semua request yang masuk
+
+---
+
+### Fitur Desktop App
+
+**Multi-tunnel** — jalankan beberapa port sekaligus dari satu tampilan
+
+**Auto-start** — klik ⚡ di kartu tunnel agar tunnel otomatis hidup setiap buka app
+
+**Custom domain** — hubungkan domain Cloudflare kamu sendiri (login CF diperlukan)
+
+**Rate limit** — klik 🚦 di kartu tunnel, set maksimal request per detik (contoh: `10` = max 10 req/s, lebih dari itu dapat 429)
+
+**QR Code** — klik ▦ di sebelah URL untuk generate QR, scan dari HP langsung buka URL publik
+
+**Label tunnel** — klik nama tunnel untuk beri nama custom ("API Server", "Frontend", dll.)
+
+**Auto-update** — saat ada versi baru, banner muncul otomatis di bagian bawah:
+```
+⬆ Update v1.4.0 siap — restart untuk install   [↺ Restart & Install]
+```
+Klik tombol, app restart sendiri, selesai.
+
+---
+
+## 💻 Cara 2 — CLI (Terminal)
+
+### Syarat
+
+**Node.js versi 16 ke atas** — cek dengan:
 ```bash
 node --version
 ```
+Belum ada? Download di [nodejs.org](https://nodejs.org) → pilih **LTS**
 
-Jika muncul angka versi (misal `v20.11.0`), berarti sudah siap.  
-Jika belum, download di: https://nodejs.org — pilih **LTS** lalu install seperti biasa.
-
----
-
-## Instalasi
-
-Buka terminal, masuk ke folder project ini, lalu jalankan:
+### Install
 
 ```bash
 npm install -g .
 ```
 
-Selesai. Perintah `wan-net` sekarang bisa dipakai dari mana saja di terminal.
+> Saat pertama dijalankan, `wan-net` otomatis download `cloudflared` (~30 MB). Cukup sekali.
 
-> **Catatan:** Saat pertama kali dijalankan, `wan-net` akan otomatis download `cloudflared`  
-> (binary Cloudflare Tunnel, ~30 MB). Cukup sekali, tidak perlu diulang.
+### Jalankan
 
----
-
-## Cara Menjalankan
-
-### 1. Jalankan aplikasi kamu dulu
-
-Contoh untuk PHP:
 ```bash
-php -S localhost:8000
+wan-net http <port>
 ```
 
-Contoh untuk Python:
-```bash
-python -m http.server 8000
-```
-
-Contoh untuk Node.js:
-```bash
-node app.js  # pastikan app berjalan di port tertentu, misal 3000
-```
-
-### 2. Jalankan wan-net
-
+Contoh — aplikasi kamu di port 8000:
 ```bash
 wan-net http 8000
 ```
 
-Ganti `8000` dengan port aplikasi kamu.
-
-### 3. Tunggu URL muncul
-
-Setelah ~5–10 detik, akan muncul output seperti ini:
-
+Output yang muncul:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ TUNNEL AKTIF!
@@ -87,152 +130,237 @@ Setelah ~5–10 detik, akan muncul output seperti ini:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-- **Public URL** — bagikan ke siapa saja, bisa diakses dari internet
-- **Inspector** — buka di browser untuk melihat semua request masuk
-- **Local app** — aplikasi kamu yang berjalan di komputer lokal
+Buka **Inspector** di browser untuk melihat request masuk secara real-time.
 
-### 4. Berhenti
-
-Tekan `Ctrl + C` di terminal.
-
----
-
-## Opsi CLI
+### Opsi CLI
 
 ```bash
 wan-net http <port> [opsi]
 ```
 
-| Opsi | Keterangan | Default |
-|------|------------|---------|
-| `--pass <password>` | Lindungi inspector dengan password | (tidak ada) |
-| `--tunnel-port <n>` | Port internal tunnel server | 3000 |
-| `--client-port <n>` | Port internal client server | 4040 |
+| Opsi | Keterangan |
+|------|------------|
+| `--pass <password>` | Lindungi inspector dengan password |
+| `--tunnel-port <n>` | Port internal tunnel server (default: 3000) |
+| `--client-port <n>` | Port internal client server (default: 4040) |
 
-**Contoh dengan password:**
+Berhenti: tekan **Ctrl + C**
+
+---
+
+## 🔍 Fitur Inspector
+
+Buka inspector via tombol di desktop app, atau langsung di browser: `http://localhost:8080`
+
+### Melihat Request
+Setiap request tampil real-time dengan info lengkap:
+- Method (GET, POST, PUT, DELETE, dll.)
+- URL dan query string
+- Status code (200, 404, 500, dll.)
+- Headers request & response
+- Body request & response (dengan syntax highlight JSON)
+- Waktu respons (ms) dan ukuran body
+
+### Filter & Cari
+- Tombol **All / 2xx / 3xx / 4xx / 5xx** untuk filter berdasarkan status
+- Kolom **Search** untuk cari berdasarkan URL, method, atau isi body
+- Tombol **📌 Pin** untuk kunci request penting agar tidak hilang saat scroll
+
+### Replay Request
+Klik **Replay** untuk kirim ulang request ke aplikasi kamu — tanpa perlu membuat request baru dari client.
+
+### Edit & Replay
+Klik **Edit & Replay** untuk ubah method, URL, headers, atau body sebelum dikirim ulang.  
+Berguna untuk debug atau test variasi request.
+
+### Mock Response
+Klik **Mock** pada request untuk membuat respons palsu.  
+Saat URL tersebut dipanggil lagi, WAN NET langsung balas dengan respons yang kamu definisikan — tanpa meneruskan ke aplikasi.
+
+**Contoh penggunaan mock:**
+- Simulasi error 500 dari server
+- Simulasi respons lambat (ada field **Delay ms** — isi `2000` untuk simulasi jaringan lambat 2 detik)
+- Return data spesifik untuk test frontend tanpa backend jalan
+
+### Rate Limiting
+Atur maksimal request per detik per tunnel.  
+Request yang melebihi batas otomatis mendapat respons **429 Too Many Requests**.  
+Berguna untuk test behavior aplikasi saat API di-throttle.
+
+### Diff Request
+Klik **Diff** untuk bandingkan dua request secara berdampingan — lihat perbedaan headers, body, atau URL.
+
+### Timeline View
+Klik **Timeline** untuk lihat semua request dalam visualisasi waterfall — cocok untuk analisis performa.
+
+### Header Injection
+Klik **Inject** untuk otomatis menambahkan header ke setiap request masuk.  
+Berguna untuk inject token auth, trace ID, atau header custom lainnya.
+
+### Export HAR
+Klik **HAR** untuk export semua request dalam format HAR (HTTP Archive).  
+Bisa dibuka di Chrome DevTools → Network → Import HAR untuk analisis lebih lanjut.
+
+### Export Postman Collection
+Klik **Postman** untuk export request sebagai Postman Collection v2.1.  
+Import langsung ke Postman — semua request, headers, dan body sudah siap.
+
+### Shortcut Keyboard
+
+| Tombol | Fungsi |
+|--------|--------|
+| `↑` `↓` | Navigasi antar request |
+| `R` | Replay request yang dipilih |
+| `U` | Copy request sebagai perintah cURL |
+| `C` | Copy request body |
+| `Esc` | Tutup modal |
+
+---
+
+## 👨‍💻 Untuk Developer
+
+### Menjalankan dari Source Code
+
+**Syarat:** Node.js 18+, Git
+
 ```bash
-wan-net http 8000 --pass rahasia123
+# 1. Clone repository
+git clone https://github.com/setiyawan12/absenku-inspector-request.git
+cd absenku-inspector-request
+
+# 2. Install dependencies
+npm install
+
+# 3. Jalankan versi CLI
+npm run dev
+# atau
+node bin/wan-net.js http 3000
+
+# 4. Jalankan versi Electron (desktop app, mode development)
+npm run electron
 ```
 
-Inspector akan meminta username `admin` dan password yang kamu set.
+### Build Desktop App
 
----
-
-## Dashboard Inspector
-
-Buka **http://localhost:8080** di browser saat wan-net sedang berjalan.
-
-### Apa yang bisa dilakukan:
-
-#### Lihat Request
-Setiap request yang masuk ke URL publik ditampilkan secara real-time:
-- Method (GET, POST, PUT, dll.)
-- URL path
-- Status code response
-- Waktu request
-- Headers, body request, dan body response lengkap
-
-#### Filter Request
-Gunakan tombol filter di bagian atas untuk menampilkan hanya request dengan method atau status tertentu.
-
-#### Copy
-Klik tombol **Copy** di samping headers atau body untuk menyalin isinya ke clipboard.
-
-#### Replay Request
-Klik tombol **Replay** pada request untuk mengirim ulang request tersebut ke aplikasi kamu.  
-Berguna saat kamu ingin test ulang tanpa harus membuat request baru dari client.
-
-#### Edit & Replay
-Klik **Edit & Replay** untuk mengubah method, URL, headers, atau body sebelum dikirim ulang.
-
-#### Pause / Resume
-Klik tombol **Pause** untuk menghentikan sementara tampilan request baru (data tetap direkam di background).  
-Klik **Resume** untuk melanjutkan.
-
-#### Pin Request
-Klik ikon pin pada request untuk "mengunci" request tersebut agar tetap terlihat saat scroll.
-
-#### Mock Response
-Klik **Mock** pada request untuk membuat mock response — saat URL tersebut dipanggil lagi,  
-wan-net akan langsung balas dengan response yang sudah kamu definisikan, tanpa meneruskan ke aplikasi.
-
-Berguna untuk simulasi kondisi tertentu (misal: simulasi error 500, atau response spesifik).
-
-#### Mocks List
-Klik tombol **Mocks** di navbar untuk melihat dan menghapus semua mock yang aktif.
-
-#### HAR Export
-Klik **Export HAR** untuk mengunduh semua request dalam format HAR (HTTP Archive).  
-File ini bisa dibuka di Chrome DevTools → Network → Import HAR.
-
-#### Notifikasi Browser
-Klik ikon lonceng untuk mengaktifkan notifikasi browser.  
-Kamu akan mendapat notifikasi setiap ada request masuk, meski tab inspector tidak sedang terbuka.
-
-#### Clear Log
-Klik **Clear** untuk menghapus semua request dari tampilan inspector.
-
----
-
-## Uninstall
-
+Pastikan sudah install dependencies dulu:
 ```bash
-npm uninstall -g wan-net-inspector-request
+npm install
 ```
 
-Setelah itu, perintah `wan-net` tidak akan tersedia lagi.
+**Build untuk macOS:**
+```bash
+npm run build:mac
+# Output: dist/WAN NET-x.x.x-arm64.dmg
+```
 
-> File `cloudflared` yang sudah didownload ada di dalam folder project.  
-> Hapus folder project secara manual jika tidak diperlukan lagi.
+**Build untuk Windows:**
+```bash
+npm run build:win
+# Output: dist/WAN NET-x.x.x-win-installer.exe
+```
 
----
+**Build untuk Linux:**
+```bash
+npm run build:linux
+# Output: dist/*.deb dan dist/*.AppImage
+```
 
-## Catatan Platform
+**Build semua platform sekaligus:**
+```bash
+npm run build
+```
 
-| Sistem Operasi | Status |
-|----------------|--------|
-| macOS (Intel & Apple Silicon) | ✅ Didukung |
-| Linux (x64 & ARM64) | ✅ Didukung |
-| Windows | ✅ Didukung |
+> File hasil build ada di folder `dist/`
 
-Binary `cloudflared` akan didownload secara otomatis sesuai dengan OS dan arsitektur komputer kamu.
+### Release Versi Baru
 
----
+Workflow ini otomatis build dan upload ke GitHub Releases via GitHub Actions:
 
-## FAQ
+```bash
+# 1. Naikkan versi (ganti 1.4.0 dengan versi yang diinginkan)
+npm version 1.4.0 --no-git-tag-version
+git add package.json
+git commit -m "chore: bump version to 1.4.0"
+git push origin main
 
-**Q: URL publik berubah setiap kali dijalankan — normal tidak?**  
-A: Normal. Cloudflare Quick Tunnel memang memberikan URL acak setiap sesi. Ini adalah layanan gratis tanpa akun.
+# 2. Push tag → trigger GitHub Actions build otomatis
+git tag v1.4.0
+git push origin v1.4.0
+```
 
-**Q: Apakah data request saya tersimpan di server?**  
-A: Tidak. Semua data hanya tersimpan di memori komputer lokal kamu dan hilang saat wan-net dihentikan.
+GitHub Actions akan:
+1. Build DMG (macOS), EXE (Windows), DEB + AppImage (Linux)
+2. Upload semua file ke GitHub Releases
+3. Generate `latest-mac.yml` yang dibaca auto-updater
 
-**Q: Bisa dipakai tanpa internet?**  
-A: Inspector dan tunnel lokal tetap berjalan, tapi URL publik tidak akan tersedia tanpa koneksi ke Cloudflare.
+Semua user yang sudah install versi lama akan mendapat notifikasi update otomatis.
 
-**Q: Berapa batas request yang bisa ditampilkan?**  
-A: Inspector menyimpan maksimal 500 request terakhir.
-
----
-
-## Struktur File (untuk developer)
+### Struktur Folder
 
 ```
 NGROK/
 ├── bin/
-│   └── wan-net.js        ← CLI entry point (perintah wan-net)
+│   └── wan-net.js              ← CLI entry point
+├── electron/
+│   ├── main.js                 ← Electron main process
+│   ├── launcher.html           ← UI dashboard desktop
+│   ├── launcher.js             ← Logika UI dashboard
+│   ├── launcher.css            ← Styling dashboard
+│   ├── launcher-preload.js     ← Bridge renderer ↔ main (contextBridge)
+│   ├── preload.js              ← Preload untuk settings window
+│   └── settings.html           ← Halaman settings
 ├── lib/
-│   ├── config.js         ← Konfigurasi port dan env vars
-│   ├── state.js          ← State bersama antar modul
-│   ├── utils.js          ← Helper: SSE, uid, port detection
-│   ├── tunnel-server.js  ← Server penerima request publik (port 3000)
-│   ├── client-server.js  ← Server komunikasi ke client (port 4040)
-│   ├── inspector-server.js ← Server dashboard inspector (port 8080+)
-│   ├── inspector-html.js ← HTML/JS dashboard browser
-│   ├── tunnel-client.js  ← Client yang forward request ke app lokal
-│   └── cloudflared.js    ← Download & spawn cloudflared
-├── server.js             ← Entry point alternatif (tanpa CLI)
-├── client.js             ← Client standalone (tanpa CLI)
+│   ├── config.js               ← Konfigurasi global
+│   ├── state.js                ← State bersama antar modul
+│   ├── utils.js                ← Helper: SSE, uid, auth, dll.
+│   ├── persist.js              ← Simpan/load log ke disk
+│   ├── tunnel-server.js        ← Terima request publik + rate limit + mock
+│   ├── client-server.js        ← Komunikasi dengan tunnel client
+│   ├── inspector-server.js     ← API + SSE untuk dashboard browser
+│   ├── inspector-html.js       ← Assembler HTML dashboard
+│   ├── inspector-client.js     ← Logika browser dashboard
+│   ├── inspector-css.js        ← Styling dashboard
+│   ├── tunnel-client.js        ← Forward request ke app lokal
+│   └── cloudflared.js          ← Download & spawn cloudflared
+├── scripts/
+│   ├── notarize.js             ← Script notarisasi macOS
+│   └── entitlements.mac.plist  ← Entitlements untuk hardenedRuntime
+├── .github/
+│   └── workflows/
+│       └── build.yml           ← CI/CD: build + release otomatis
 ├── package.json
 └── README.md
 ```
+
+---
+
+## ❓ FAQ
+
+**URL publik berubah setiap sesi — normal?**  
+Ya, normal. Cloudflare Quick Tunnel (gratis) memang memberi URL acak tiap sesi. Untuk URL permanen, gunakan fitur Custom Domain dengan akun Cloudflare.
+
+**Apakah data request tersimpan di server?**  
+Tidak. Semua data hanya di memori komputer kamu dan hilang saat WAN NET ditutup.
+
+**Inspector tidak terbuka di browser?**  
+Pastikan WAN NET sedang berjalan, lalu buka manual: `http://localhost:8080`
+
+**Bisa jalankan lebih dari satu tunnel?**  
+Bisa. Di desktop app, tambahkan port baru dari kolom input. Di CLI, jalankan `wan-net http <port>` di terminal berbeda.
+
+**Mock tidak aktif?**  
+Pastikan method dan path mock persis sama dengan request yang masuk. Mock tidak mendukung wildcard/regex — harus exact match.
+
+**Auto-update tidak muncul?**  
+Pastikan kamu memakai versi yang terinstall dari GitHub Releases (bukan build manual). Cek koneksi internet, lalu restart app.
+
+---
+
+## Platform
+
+| OS | Status |
+|----|--------|
+| macOS Apple Silicon (M1/M2/M3) | ✅ |
+| macOS Intel | ✅ |
+| Windows 10/11 (x64) | ✅ |
+| Linux (x64) | ✅ |

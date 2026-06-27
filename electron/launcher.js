@@ -52,6 +52,9 @@ window.addEventListener('message', e => {
 
 // ═══ Init ═════════════════════════════════════════════════════════════════════
 async function init() {
+  const _ver = await window.wanNet.getVersion().catch(() => '');
+  if (_ver) document.getElementById('app-version').textContent = `v${_ver}`;
+
   _inspPort = await window.wanNet.getInspPort();
   document.getElementById('insp-link').textContent  = `http://localhost:${_inspPort}`;
   document.getElementById('topbar-url').textContent = `http://localhost:${_inspPort}`;

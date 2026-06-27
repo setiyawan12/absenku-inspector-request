@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('wanNet', {
   deleteAllTunnels: ()           => ipcRenderer.invoke('delete-all-tunnels'),
   listTunnels     : ()           => ipcRenderer.invoke('list-tunnels'),
   getInspPort     : ()           => ipcRenderer.invoke('get-insp-port'),
+  getVersion      : ()           => ipcRenderer.invoke('get-version'),
   openInspector   : ()           => ipcRenderer.invoke('open-inspector'),
   openExternal    : (url)        => ipcRenderer.invoke('open-external', url),
   openSettings    : ()           => ipcRenderer.invoke('open-settings'),

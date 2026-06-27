@@ -416,6 +416,7 @@ ipcMain.handle('delete-all-tunnels', () => {
 });
 ipcMain.handle('list-tunnels',  ()          => _snapshotTunnels());
 ipcMain.handle('get-insp-port', ()          => _inspPort);
+ipcMain.handle('get-version',  ()          => app.getVersion());
 ipcMain.handle('open-inspector',()          => _showLauncherWin());
 ipcMain.handle('open-external', (_e, url)  => shell.openExternal(url));
 ipcMain.handle('open-settings', ()          => openSettings());
@@ -439,7 +440,11 @@ ipcMain.handle('set-label', (_e, key, label) => {
   return { ok: true };
 });
 ipcMain.handle('install-update', () => {
-  try { autoUpdater?.quitAndInstall(); } catch {}
+  if (!app.isPackaged) {
+    console.warn('[updater] quitAndInstall skip — dev mode, tidak berlaku di npm run electron');
+    return;
+  }
+  try { autoUpdater?.quitAndInstall(); } catch (e) { console.warn('[updater] quitAndInstall error:', e.message); }
 });
 ipcMain.handle('set-rate-limit', (_e, key, maxReq, windowMs) => {
   const tunnel = state.tunnels.get(key);

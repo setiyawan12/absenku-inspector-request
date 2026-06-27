@@ -86,7 +86,7 @@ async function init() {
       document.getElementById('upd-install-btn').style.display   = 'none';
       document.getElementById('upd-close-btn').style.display     = '';
       document.getElementById('upd-later-btn').style.display     = '';
-      document.getElementById('upd-overlay').style.display       = 'flex';
+      document.getElementById('update-overlay').style.display       = 'flex';
     });
     if (window.wanNet.onDownloadProgress) {
       window.wanNet.onDownloadProgress(prog => {
@@ -108,7 +108,7 @@ async function init() {
       document.getElementById('upd-install-btn').style.display = '';
       document.getElementById('upd-later-btn').style.display   = '';
       document.getElementById('upd-close-btn').style.display   = '';
-      document.getElementById('upd-overlay').style.display     = 'flex';
+      document.getElementById('update-overlay').style.display     = 'flex';
     });
   }
 }
@@ -863,7 +863,38 @@ async function openQR(url) {
   else document.getElementById('qr-img').alt = 'Gagal generate QR';
 }
 function closeQR() { document.getElementById('qr-overlay').classList.remove('open'); }
-function closeUpdateDialog() { document.getElementById('upd-overlay').style.display = 'none'; }
+function closeUpdateDialog() { document.getElementById('update-overlay').style.display = 'none'; }
+
+// ── TEST shortcut: Ctrl+Shift+U → simulasi update dialog ─────────────────────
+window.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'U') {
+    document.getElementById('upd-version').textContent  = 'Versi 1.5.0';
+    document.getElementById('upd-title').textContent    = 'Update Tersedia';
+    document.getElementById('upd-status').textContent   = 'Mengunduh pembaruan…';
+    document.getElementById('upd-bar').style.width      = '0%';
+    document.getElementById('upd-pct').textContent      = '0%';
+    document.getElementById('upd-speed').textContent    = '';
+    document.getElementById('upd-progress-wrap').style.display = 'flex';
+    document.getElementById('upd-install-btn').style.display   = 'none';
+    document.getElementById('update-overlay').style.display    = 'flex';
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct += 2;
+      document.getElementById('upd-bar').style.width  = pct + '%';
+      document.getElementById('upd-pct').textContent  = pct + '%';
+      document.getElementById('upd-speed').textContent = (Math.random()*500+200).toFixed(0)+' KB/s';
+      if (pct >= 100) {
+        clearInterval(iv);
+        setTimeout(() => {
+          document.getElementById('upd-title').textContent  = 'Update Siap Diinstall';
+          document.getElementById('upd-status').textContent = 'v1.5.0 berhasil diunduh. Restart untuk menerapkan.';
+          document.getElementById('upd-speed').textContent  = '';
+          document.getElementById('upd-install-btn').style.display = '';
+        }, 300);
+      }
+    }, 100);
+  }
+});
 async function copyQR() {
   await window.wanNet.copyText(_qrCurrentUrl);
   showToast();

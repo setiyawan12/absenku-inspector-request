@@ -504,20 +504,28 @@ app.whenReady().then(async () => {
 
   // ── Auto-update (electron-updater) ────────────────────────────────────────
   if (autoUpdater) {
-    autoUpdater.autoDownload    = true;
+    // autoDownload: false → kita trigger manual agar download-progress event keluar
+    autoUpdater.autoDownload         = false;
     autoUpdater.autoInstallOnAppQuit = true;
+
     const _sendUpdate = (channel, info) => {
       if (_launcherWin && !_launcherWin.isDestroyed()) {
         _launcherWin.webContents.send(channel, info);
       }
     };
-    autoUpdater.on('update-available',  info => _sendUpdate('update-available', info));
+
+    autoUpdater.on('update-available', info => {
+      _sendUpdate('update-available', info);
+      // Mulai download manual setelah notif dikirim ke renderer
+      try { autoUpdater.downloadUpdate(); } catch (e) { console.warn('downloadUpdate error:', e.message); }
+    });
     autoUpdater.on('download-progress', prog => _sendUpdate('download-progress', prog));
     autoUpdater.on('update-downloaded', info => _sendUpdate('update-downloaded', info));
     autoUpdater.on('error', err => console.warn('autoUpdater error:', err.message));
-    // Check 5 s after startup so the window is ready
+
+    // Check 5 s setelah startup agar window sudah siap
     setTimeout(() => {
-      try { autoUpdater.checkForUpdatesAndNotify(); } catch (e) { console.warn('update check failed:', e.message); }
+      try { autoUpdater.checkForUpdates(); } catch (e) { console.warn('update check failed:', e.message); }
     }, 5000);
   }
 

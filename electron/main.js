@@ -348,6 +348,11 @@ function buildTrayMenu() {
     ...(tunnelItems.length ? [{ type: 'separator' }, ...tunnelItems] : []),
     { type: 'separator' },
     { label: 'Settings…', click: openSettings },
+    { label: 'Check for Update…', click: () => {
+        _showLauncherWin();
+        if (_launcherWin && !_launcherWin.isDestroyed())
+          _launcherWin.webContents.send('trigger-check-update');
+    }},
     { type: 'separator' },
     { label: 'Keluar', click: () => { _isQuitting = true; app.quit(); } },
   ]);
@@ -528,20 +533,34 @@ app.whenReady().then(async () => {
       }
     };
 
-    autoUpdater.on('update-available', info => {
-      _sendUpdate('update-available', info);
-      // Mulai download manual setelah notif dikirim ke renderer
-      try { autoUpdater.downloadUpdate(); } catch (e) { console.warn('downloadUpdate error:', e.message); }
-    });
+    autoUpdater.on('update-available',  info => _sendUpdate('update-available',  info));
+    autoUpdater.on('update-not-available', () => _sendUpdate('update-not-available', {}));
     autoUpdater.on('download-progress', prog => _sendUpdate('download-progress', prog));
     autoUpdater.on('update-downloaded', info => _sendUpdate('update-downloaded', info));
-    autoUpdater.on('error', err => console.warn('autoUpdater error:', err.message));
+    autoUpdater.on('error', err => {
+      console.warn('autoUpdater error:', err.message);
+      _sendUpdate('update-error', { message: err.message });
+    });
 
-    // Check 5 s setelah startup agar window sudah siap
+    // Check 5 s setelah startup — hanya notif, tidak langsung download
     setTimeout(() => {
       try { autoUpdater.checkForUpdates(); } catch (e) { console.warn('update check failed:', e.message); }
     }, 5000);
   }
+
+  // IPC: manual check for update
+  ipcMain.handle('check-for-update', async () => {
+    if (!autoUpdater) return { ok: false, error: 'updater not available' };
+    try { await autoUpdater.checkForUpdates(); return { ok: true }; }
+    catch (e) { return { ok: false, error: e.message }; }
+  });
+
+  // IPC: mulai download setelah user konfirmasi
+  ipcMain.handle('start-download-update', async () => {
+    if (!autoUpdater) return { ok: false };
+    try { await autoUpdater.downloadUpdate(); return { ok: true }; }
+    catch (e) { console.warn('downloadUpdate error:', e.message); return { ok: false, error: e.message }; }
+  });
 
   // Auto-start saved tunnels
   const autoStart = Array.isArray(_cfg.autoStart) ? _cfg.autoStart : [];

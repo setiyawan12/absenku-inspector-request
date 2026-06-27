@@ -9,6 +9,11 @@ let _uptimeTimer;
 let _pollTimer;
 let _histExpanded   = {};    // { [tunnelKey]: bool } — expanded state for URL history
 
+// Update state (global agar bisa diakses dari fungsi-fungsi di luar init)
+let _pendingUpdateInfo = null;
+let _updFakeIv         = null;
+let _updRealProg       = false;
+
 // Cloudflare state
 let _cfLoggedIn    = false;
 let _cfTunnels     = [];   // [{ id, name, ... }] from cloudflared
@@ -81,63 +86,33 @@ async function init() {
 
   // ── Auto-update listeners ──────────────────────────────────────────────────
   if (window.wanNet.onUpdateAvailable) {
-    let _fakeIv      = null;  // timer animasi fallback
-    let _realProgress = false; // flag: sudah dapat event nyata
-
-    function _setUpdPct(pct, speed) {
-      document.getElementById('upd-bar').style.width  = pct + '%';
-      document.getElementById('upd-pct').textContent  = Math.round(pct) + '%';
-      if (speed !== undefined) document.getElementById('upd-speed').textContent = speed;
-    }
-
-    function _startFakeProgress() {
-      // Animasi lambat 0→88% sebagai fallback kalau event nyata tidak datang
-      let fake = 0;
-      _fakeIv = setInterval(() => {
-        if (_realProgress) { clearInterval(_fakeIv); return; }
-        // Makin lambat mendekati 88%
-        const step = fake < 30 ? 1.2 : fake < 60 ? 0.6 : fake < 80 ? 0.3 : 0.05;
-        fake = Math.min(fake + step, 88);
-        _setUpdPct(fake, '');
-        if (fake >= 88) clearInterval(_fakeIv);
-      }, 200);
-    }
-
-    function _showUpdateDialog(version) {
-      document.getElementById('upd-version').textContent              = `Versi ${version}`;
-      document.getElementById('upd-title').textContent                = 'Update Tersedia';
-      document.getElementById('upd-status').textContent               = 'Mengunduh pembaruan…';
-      document.getElementById('upd-progress-wrap').style.display      = 'flex';
-      document.getElementById('upd-install-btn').style.display        = 'none';
-      document.getElementById('update-overlay').style.display         = 'flex';
-      _setUpdPct(0, '');
-    }
-
     window.wanNet.onUpdateAvailable(info => {
-      _realProgress = false;
-      _showUpdateDialog(info.version);
-      // Mulai animasi fallback setelah 1 detik — beri waktu event nyata datang
-      setTimeout(_startFakeProgress, 1000);
+      _pendingUpdateInfo = info;
+      _updStateConfirm(info);
     });
-
-    if (window.wanNet.onDownloadProgress) {
-      window.wanNet.onDownloadProgress(prog => {
-        _realProgress = true;          // matikan fallback
-        clearInterval(_fakeIv);
-        const pct = prog.percent || 0;
-        const kbs = prog.bytesPerSecond ? (prog.bytesPerSecond / 1024).toFixed(0) + ' KB/s' : '';
-        _setUpdPct(pct, kbs);
-      });
-    }
-
-    window.wanNet.onUpdateDownloaded(info => {
-      clearInterval(_fakeIv);
-      _setUpdPct(100, '');
-      document.getElementById('upd-title').textContent           = 'Update Siap Diinstall';
-      document.getElementById('upd-status').textContent          = `v${info.version} berhasil diunduh. Restart untuk menerapkan.`;
-      document.getElementById('upd-install-btn').style.display   = '';
-      document.getElementById('update-overlay').style.display    = 'flex';
+    window.wanNet.onUpdateNotAvailable(() => {
+      document.getElementById('upd-title').textContent   = 'Aplikasi sudah terbaru';
+      document.getElementById('upd-icon').textContent    = '✅';
+      document.getElementById('upd-status').textContent  = 'Kamu sudah menggunakan versi terbaru.';
+      document.getElementById('upd-version').textContent = '';
+      document.getElementById('upd-later-btn').style.display = '';
+      document.getElementById('upd-now-btn').style.display   = 'none';
     });
+    window.wanNet.onDownloadProgress(prog => {
+      _updRealProg = true;
+      clearInterval(_updFakeIv);
+      _setUpdPct(prog.percent || 0, prog.bytesPerSecond ? (prog.bytesPerSecond/1024).toFixed(0)+' KB/s' : '');
+    });
+    window.wanNet.onUpdateDownloaded(info  => _updStateReady(info));
+    window.wanNet.onUpdateError(err => {
+      document.getElementById('upd-icon').textContent    = '⚠️';
+      document.getElementById('upd-title').textContent   = 'Update Gagal';
+      document.getElementById('upd-status').textContent  = err.message || 'Terjadi kesalahan saat update.';
+      document.getElementById('upd-later-btn').style.display = '';
+      document.getElementById('upd-now-btn').style.display   = 'none';
+      clearInterval(_updFakeIv);
+    });
+    window.wanNet.onTriggerCheckUpdate(() => checkForUpdate());
   }
 }
 
@@ -891,7 +866,91 @@ async function openQR(url) {
   else document.getElementById('qr-img').alt = 'Gagal generate QR';
 }
 function closeQR() { document.getElementById('qr-overlay').classList.remove('open'); }
+
+// ── Update dialog state helpers (global scope) ────────────────────────────────
+function _setUpdPct(pct, speed) {
+  document.getElementById('upd-bar').style.width = pct + '%';
+  document.getElementById('upd-pct').textContent = Math.round(pct) + '%';
+  if (speed !== undefined) document.getElementById('upd-speed').textContent = speed;
+}
+function _updStateChecking() {
+  document.getElementById('upd-icon').textContent            = '🔄';
+  document.getElementById('upd-title').textContent           = 'Memeriksa pembaruan…';
+  document.getElementById('upd-version').textContent         = '';
+  document.getElementById('upd-status').textContent          = '';
+  document.getElementById('upd-progress-wrap').style.display = 'none';
+  document.getElementById('upd-later-btn').style.display     = 'none';
+  document.getElementById('upd-now-btn').style.display       = 'none';
+  document.getElementById('upd-install-btn').style.display   = 'none';
+  document.getElementById('update-overlay').style.display    = 'flex';
+}
+function _updStateConfirm(info) {
+  document.getElementById('upd-icon').textContent            = '⬆️';
+  document.getElementById('upd-title').textContent           = 'Update Tersedia';
+  document.getElementById('upd-version').textContent         = `Versi ${info.version}`;
+  document.getElementById('upd-status').textContent          = `Versi ${info.version} siap diunduh. Mau update sekarang?`;
+  document.getElementById('upd-progress-wrap').style.display = 'none';
+  document.getElementById('upd-later-btn').style.display     = '';
+  document.getElementById('upd-now-btn').style.display       = '';
+  document.getElementById('upd-install-btn').style.display   = 'none';
+  document.getElementById('update-overlay').style.display    = 'flex';
+}
+function _updStateDownloading(version) {
+  document.getElementById('upd-icon').textContent            = '⬆️';
+  document.getElementById('upd-title').textContent           = 'Mengunduh Update…';
+  document.getElementById('upd-version').textContent         = `Versi ${version}`;
+  document.getElementById('upd-status').textContent          = 'Harap tunggu, sedang mengunduh pembaruan.';
+  document.getElementById('upd-progress-wrap').style.display = 'flex';
+  document.getElementById('upd-later-btn').style.display     = 'none';
+  document.getElementById('upd-now-btn').style.display       = 'none';
+  document.getElementById('upd-install-btn').style.display   = 'none';
+  _setUpdPct(0, '');
+  _updRealProg = false;
+  clearInterval(_updFakeIv);
+  let fake = 0;
+  _updFakeIv = setInterval(() => {
+    if (_updRealProg) { clearInterval(_updFakeIv); return; }
+    const step = fake < 30 ? 1.2 : fake < 60 ? 0.6 : fake < 80 ? 0.25 : 0.05;
+    fake = Math.min(fake + step, 88);
+    _setUpdPct(fake, '');
+    if (fake >= 88) clearInterval(_updFakeIv);
+  }, 200);
+}
+function _updStateReady(info) {
+  clearInterval(_updFakeIv);
+  _setUpdPct(100, '');
+  document.getElementById('upd-icon').textContent            = '✅';
+  document.getElementById('upd-title').textContent           = 'Update Siap Diinstall';
+  document.getElementById('upd-version').textContent         = `Versi ${info.version}`;
+  document.getElementById('upd-status').textContent          = `v${info.version} berhasil diunduh. Restart untuk menerapkan.`;
+  document.getElementById('upd-later-btn').style.display     = '';
+  document.getElementById('upd-now-btn').style.display       = 'none';
+  document.getElementById('upd-install-btn').style.display   = '';
+  document.getElementById('update-overlay').style.display    = 'flex';
+}
 function closeUpdateDialog() { document.getElementById('update-overlay').style.display = 'none'; }
+
+async function checkForUpdate() {
+  _updStateChecking();
+  await window.wanNet.checkForUpdate().catch(() => {
+    document.getElementById('upd-icon').textContent   = '⚠️';
+    document.getElementById('upd-title').textContent  = 'Gagal Memeriksa';
+    document.getElementById('upd-status').textContent = 'Tidak dapat menghubungi server update. Periksa koneksi internet.';
+    document.getElementById('upd-later-btn').style.display = '';
+  });
+}
+
+async function startUpdateDownload() {
+  if (!_pendingUpdateInfo) return;
+  _updStateDownloading(_pendingUpdateInfo.version);
+  await window.wanNet.startDownloadUpdate().catch(e => {
+    document.getElementById('upd-icon').textContent   = '⚠️';
+    document.getElementById('upd-title').textContent  = 'Download Gagal';
+    document.getElementById('upd-status').textContent = e?.message || 'Gagal mengunduh update.';
+    document.getElementById('upd-later-btn').style.display = '';
+    clearInterval(_updFakeIv);
+  });
+}
 
 // ── TEST shortcut: Ctrl+Shift+U → simulasi update dialog ─────────────────────
 window.addEventListener('keydown', e => {

@@ -1,6 +1,6 @@
 {
   "name": "wan-net",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
     "name": "WAN NET",
@@ -81,13 +81,6 @@
       "executableArgs": [
         "--no-sandbox"
       ],
-      "depends": [
-        "libgtk-3-0",
-        "libgbm1",
-        "libnss3",
-        "libxss1",
-        "libasound2"
-      ],
       "desktop": {
         "Name": "WAN NET",
         "Comment": "HTTP Tunnel & Request Inspector",
@@ -109,6 +102,15 @@
             "x64"
           ]
         }
+      ]
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libgbm1",
+        "libnss3",
+        "libxss1",
+        "libasound2"
       ]
     },
     "afterSign": "scripts/notarize.js",

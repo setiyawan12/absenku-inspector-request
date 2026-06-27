@@ -78,37 +78,62 @@ async function init() {
 
   // ── Auto-update listeners ──────────────────────────────────────────────────
   if (window.wanNet.onUpdateAvailable) {
+    let _fakeIv      = null;  // timer animasi fallback
+    let _realProgress = false; // flag: sudah dapat event nyata
+
+    function _setUpdPct(pct, speed) {
+      document.getElementById('upd-bar').style.width  = pct + '%';
+      document.getElementById('upd-pct').textContent  = Math.round(pct) + '%';
+      if (speed !== undefined) document.getElementById('upd-speed').textContent = speed;
+    }
+
+    function _startFakeProgress() {
+      // Animasi lambat 0→88% sebagai fallback kalau event nyata tidak datang
+      let fake = 0;
+      _fakeIv = setInterval(() => {
+        if (_realProgress) { clearInterval(_fakeIv); return; }
+        // Makin lambat mendekati 88%
+        const step = fake < 30 ? 1.2 : fake < 60 ? 0.6 : fake < 80 ? 0.3 : 0.05;
+        fake = Math.min(fake + step, 88);
+        _setUpdPct(fake, '');
+        if (fake >= 88) clearInterval(_fakeIv);
+      }, 200);
+    }
+
+    function _showUpdateDialog(version) {
+      document.getElementById('upd-version').textContent              = `Versi ${version}`;
+      document.getElementById('upd-title').textContent                = 'Update Tersedia';
+      document.getElementById('upd-status').textContent               = 'Mengunduh pembaruan…';
+      document.getElementById('upd-progress-wrap').style.display      = 'flex';
+      document.getElementById('upd-install-btn').style.display        = 'none';
+      document.getElementById('update-overlay').style.display         = 'flex';
+      _setUpdPct(0, '');
+    }
+
     window.wanNet.onUpdateAvailable(info => {
-      document.getElementById('upd-version').textContent = `Versi ${info.version}`;
-      document.getElementById('upd-title').textContent   = 'Update Tersedia';
-      document.getElementById('upd-status').textContent  = 'Mengunduh pembaruan…';
-      document.getElementById('upd-progress-wrap').style.display = 'flex';
-      document.getElementById('upd-install-btn').style.display   = 'none';
-      document.getElementById('upd-close-btn').style.display     = '';
-      document.getElementById('upd-later-btn').style.display     = '';
-      document.getElementById('update-overlay').style.display       = 'flex';
+      _realProgress = false;
+      _showUpdateDialog(info.version);
+      // Mulai animasi fallback setelah 1 detik — beri waktu event nyata datang
+      setTimeout(_startFakeProgress, 1000);
     });
+
     if (window.wanNet.onDownloadProgress) {
       window.wanNet.onDownloadProgress(prog => {
-        const pct = Math.round(prog.percent || 0);
-        document.getElementById('upd-bar').style.width = pct + '%';
-        document.getElementById('upd-pct').textContent = pct + '%';
-        if (prog.bytesPerSecond) {
-          const kbs = (prog.bytesPerSecond / 1024).toFixed(0);
-          document.getElementById('upd-speed').textContent = kbs + ' KB/s';
-        }
+        _realProgress = true;          // matikan fallback
+        clearInterval(_fakeIv);
+        const pct = prog.percent || 0;
+        const kbs = prog.bytesPerSecond ? (prog.bytesPerSecond / 1024).toFixed(0) + ' KB/s' : '';
+        _setUpdPct(pct, kbs);
       });
     }
+
     window.wanNet.onUpdateDownloaded(info => {
-      document.getElementById('upd-title').textContent   = 'Update Siap Diinstall';
-      document.getElementById('upd-status').textContent  = `v${info.version} berhasil diunduh. Restart untuk menerapkan pembaruan.`;
-      document.getElementById('upd-bar').style.width     = '100%';
-      document.getElementById('upd-pct').textContent     = '100%';
-      document.getElementById('upd-speed').textContent   = '';
-      document.getElementById('upd-install-btn').style.display = '';
-      document.getElementById('upd-later-btn').style.display   = '';
-      document.getElementById('upd-close-btn').style.display   = '';
-      document.getElementById('update-overlay').style.display     = 'flex';
+      clearInterval(_fakeIv);
+      _setUpdPct(100, '');
+      document.getElementById('upd-title').textContent           = 'Update Siap Diinstall';
+      document.getElementById('upd-status').textContent          = `v${info.version} berhasil diunduh. Restart untuk menerapkan.`;
+      document.getElementById('upd-install-btn').style.display   = '';
+      document.getElementById('update-overlay').style.display    = 'flex';
     });
   }
 }

@@ -441,10 +441,17 @@ ipcMain.handle('set-label', (_e, key, label) => {
 });
 ipcMain.handle('install-update', () => {
   if (!app.isPackaged) {
-    console.warn('[updater] quitAndInstall skip — dev mode, tidak berlaku di npm run electron');
+    console.warn('[updater] quitAndInstall skip — dev mode');
     return;
   }
-  try { autoUpdater?.quitAndInstall(); } catch (e) { console.warn('[updater] quitAndInstall error:', e.message); }
+  try {
+    _isQuitting = true;   // ← izinkan window benar-benar close
+    cleanup();
+    autoUpdater?.quitAndInstall(false, true); // isSilent=false, isForceRunAfter=true
+  } catch (e) {
+    console.warn('[updater] quitAndInstall error:', e.message);
+    _isQuitting = false;
+  }
 });
 ipcMain.handle('set-rate-limit', (_e, key, maxReq, windowMs) => {
   const tunnel = state.tunnels.get(key);

@@ -88,16 +88,43 @@ jobs:
         shell: bash
         run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version --allow-same-version
 
-      - name: Build EXE
+      - name: Build EXE (unsigned)
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --publish always
 
-      - name: Smoke test — install EXE silently
+      - name: Sign EXE with SignPath
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          Install-Module -Name SignPath -Force -Scope CurrentUser
+          $exe = Get-ChildItem dist\*.exe | Where-Object { $_.Name -notlike '*.blockmap' } | Select-Object -First 1
+          Write-Host "Signing: $($exe.Name)"
+          Submit-SigningRequest `
+            -InputArtifactPath $exe.FullName `
+            -ApiToken $env:SIGNPATH_API_TOKEN `
+            -OrganizationId "8c285022-b936-40f1-abba-332b1f8f9eed" `
+            -ProjectSlug "Wan_Net" `
+            -SigningPolicySlug "Wan_Net" `
+            -OutputArtifactPath $exe.FullName `
+            -WaitForCompletion
+          Write-Host "✅ Signed: $($exe.Name)"
+
+      - name: Upload signed EXE ke GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $exe = Get-ChildItem dist\*.exe | Where-Object { $_.Name -notlike '*.blockmap' } | Select-Object -First 1
+          gh release upload $env:GITHUB_REF_NAME $exe.FullName --clobber
+          Write-Host "✅ Uploaded signed EXE to release"
+
+      - name: Smoke test — install signed EXE silently
         shell: pwsh
         run: |
-          $exe = Get-ChildItem dist\*.exe | Select-Object -First 1
+          $exe = Get-ChildItem dist\*.exe | Where-Object { $_.Name -notlike '*.blockmap' } | Select-Object -First 1
           Write-Host "Installing: $($exe.Name)"
           Start-Process -FilePath $exe.FullName -ArgumentList "/S" -Wait
           $installed = Test-Path "$env:LOCALAPPDATA\Programs\WAN-NET\wan-net.exe"

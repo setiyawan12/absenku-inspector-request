@@ -1,6 +1,6 @@
 {
   "name": "wan-net",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "WAN NET — HTTP tunnel & request inspector via Cloudflare",
   "author": {
     "name": "WAN NET",

@@ -95,6 +95,7 @@ async function init() {
       document.getElementById('upd-icon').textContent    = '✅';
       document.getElementById('upd-status').textContent  = 'Kamu sudah menggunakan versi terbaru.';
       document.getElementById('upd-version').textContent = '';
+      document.getElementById('upd-later-btn').textContent   = 'OK';
       document.getElementById('upd-later-btn').style.display = '';
       document.getElementById('upd-now-btn').style.display   = 'none';
     });
@@ -890,6 +891,7 @@ function _updStateConfirm(info) {
   document.getElementById('upd-version').textContent         = `Versi ${info.version}`;
   document.getElementById('upd-status').textContent          = `Versi ${info.version} siap diunduh. Mau update sekarang?`;
   document.getElementById('upd-progress-wrap').style.display = 'none';
+  document.getElementById('upd-later-btn').textContent       = 'Nanti';
   document.getElementById('upd-later-btn').style.display     = '';
   document.getElementById('upd-now-btn').style.display       = '';
   document.getElementById('upd-install-btn').style.display   = 'none';
